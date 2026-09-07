@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<!-- Agenda Personale — v1.0 -->
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda Personale</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --paper: #E6DEF5;
+    --surface: #D6C4EC;
+    --ink: #1E1626;
+    --ink-soft: #5C4E70;
+    --forest: #7B4FB8;
+    --forest-dark: #5E3993;
+    --brick: #E08A3E;
+    --border: #C7AEE0;
+    --rosso-allarme: #E63946;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  #login, #chi-sei {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+    padding: 48px 40px; width: 100%; max-width: 360px; text-align: center;
+  }
+  #login h1 { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 600; color: var(--forest-dark); margin-bottom: 6px; }
+  #login p.tag { color: var(--ink-soft); font-size: 0.9rem; margin-bottom: 32px; }
+  #pin-input {
+    width: 100%; padding: 12px 14px; font-size: 1.1rem; letter-spacing: 4px; text-align: center;
+    border: 1px solid var(--border); border-radius: 3px; background: var(--paper); color: var(--ink); margin-bottom: 12px;
+  }
+  #pin-input:focus { outline: 2px solid var(--forest); outline-offset: 1px; }
+  #pin-errore { display: none; color: var(--rosso-allarme); font-size: 0.82rem; font-weight: 600; margin-bottom: 12px; }
+  .btn-primary {
+    width: 100%; padding: 12px; background: var(--forest); color: #fff; border: none; border-radius: 3px;
+    font-size: 0.95rem; font-weight: 700; cursor: pointer; font-family: inherit; margin-bottom: 10px;
+  }
+  .btn-primary:hover { background: var(--forest-dark); }
+  .btn-primary:disabled { opacity: 0.6; cursor: wait; }
+
+  #app {
+    display: none; width: 100%; max-width: 920px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+  }
+  header.appbar { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: baseline; }
+  header.appbar h1 { font-family: 'Fraunces', serif; font-size: 1.25rem; font-weight: 600; color: var(--forest-dark); }
+  header.appbar span { font-size: 0.8rem; color: var(--ink-soft); }
+
+  .search-row { padding: 14px 28px; border-bottom: 1px solid var(--border); background: var(--paper); }
+  .search-input-wrap { position: relative; }
+  .search-row input {
+    width: 100%; padding: 9px 34px 9px 14px; border: 1px solid var(--border); border-radius: 3px;
+    background: var(--surface); font-family: inherit; font-size: 0.85rem; color: var(--ink);
+  }
+  .search-row input:focus { outline: 2px solid var(--forest); outline-offset: 1px; }
+  .btn-clear-ricerca {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; font-size: 0.95rem; color: var(--ink-soft); cursor: pointer; padding: 4px 6px; line-height: 1;
+  }
+  .btn-clear-ricerca:hover { color: var(--rosso-allarme); }
+  .search-hint { font-size: 0.72rem; color: var(--ink-soft); margin-top: 6px; }
+  .azioni-export { display: flex; gap: 8px; margin-top: 8px; }
+  .btn-export {
+    padding: 6px 12px; border: 1.5px solid var(--forest-dark); border-radius: 3px; background: var(--surface);
+    color: var(--forest-dark); font-size: 0.78rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  }
+  .btn-export:hover { background: var(--forest); color: #fff; }
+
+  nav.tabs { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px; border-bottom: 1px solid var(--border); background: var(--paper); }
+  nav.tabs button {
+    flex: 1 1 70px; min-width: 70px; padding: 7px 10px; font-size: 0.74rem; white-space: nowrap;
+    background: var(--surface); border: 1.5px solid var(--border); border-radius: 3px;
+    font-family: 'Inter', sans-serif; font-weight: 700; color: var(--forest-dark); cursor: pointer;
+  }
+  nav.tabs button.active { background: var(--forest); color: #fff; border-color: var(--forest-dark); }
+
+  section.panel { display: none; padding: 24px 28px; min-height: 380px; }
+  section.panel.active { display: block; }
+  h2.panel-title { font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; color: var(--ink); }
+  h3.sottotitolo { font-family: 'Fraunces', serif; font-size: 0.85rem; font-weight: 700; color: var(--forest-dark); margin-bottom: 8px; }
+
+  .filtri-categoria { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .filtro-chip {
+    padding: 4px 12px; border: 1.5px solid var(--forest-dark); border-radius: 3px; background: var(--surface);
+    color: var(--forest-dark); font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .filtro-chip.attivo { background: var(--forest); color: #fff; }
+  .categoria-select {
+    padding: 9px 10px; border: 1px solid var(--border); border-radius: 3px; background: var(--paper);
+    font-family: inherit; font-size: 0.82rem; color: var(--ink); flex: 0 0 auto;
+  }
+  .badge-categoria {
+    display: inline-block; font-size: 0.68rem; font-weight: 700; color: var(--forest-dark); background: var(--paper);
+    border: 1px solid var(--forest); padding: 0px 7px; border-radius: 3px; flex-shrink: 0; white-space: nowrap;
+  }
+  .badge-cat-cliccabile { cursor: pointer; }
+  .badge-cat-cliccabile:hover { background: var(--forest); color: #fff; }
+  .tag-nota-inline {
+    display: inline-block; font-size: 0.72rem; font-weight: 700; color: var(--forest-dark); background: var(--paper);
+    border: 1px solid var(--forest); border-radius: 3px; padding: 0px 6px; margin-right: 4px; cursor: pointer;
+  }
+
+  [contenteditable="true"] { border-radius: 2px; padding: 0 2px; margin: 0 -2px; }
+  [contenteditable="true"]:hover { background: var(--paper); cursor: text; }
+  [contenteditable="true"]:focus { outline: 1.5px dashed var(--forest); background: var(--paper); }
+
+  @keyframes pulsaAllarme { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .meta-allarme-pulsante { animation: pulsaAllarme 1.8s ease-in-out infinite; color: var(--rosso-allarme) !important; font-weight: 700; cursor: pointer; }
+  .anticipo-edit-inline { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--ink-soft); }
+  .anticipo-btn {
+    width: 22px; height: 22px; border: 2px solid var(--forest-dark); border-radius: 3px; background: var(--surface);
+    color: var(--forest-dark); font-size: 0.9rem; font-weight: 700; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .anticipo-btn:hover { background: var(--forest); color: #fff; }
+
+  /* Scadenze */
+  .scadenza { display: flex; gap: 12px; padding: 4px 0; align-items: center; border-bottom: 1px solid var(--border); }
+  .scadenza:last-child { border-bottom: none; }
+  .scadenza .data {
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.68rem; color: var(--forest-dark);
+    width: 92px; flex-shrink: 0; white-space: nowrap; text-align: center;
+    border: 1.5px solid var(--forest-dark); border-radius: 2px; padding: 3px 2px; cursor: pointer;
+  }
+  .scadenza .data small { font-size: 0.68rem; color: var(--ink-soft); font-weight: 700; margin-left: 3px; text-transform: lowercase; }
+  .scadenza .contenuto { flex: 1; }
+  .scadenza .contenuto .titolo { font-weight: 500; font-size: 0.85rem; margin-bottom: 1px; }
+  .scadenza .contenuto .meta { font-size: 0.78rem; color: var(--ink-soft); }
+  .scadenza.urgente .data { color: var(--rosso-allarme); border-color: var(--rosso-allarme); }
+  .badge-urgente { font-size: 0.66rem; color: var(--ink-soft); font-weight: 500; margin-left: 4px; }
+  #scadenze-attive:empty::after, #scadenze-completate:empty::after { content: "Nessuna scadenza qui"; font-size: 0.82rem; color: var(--ink-soft); font-style: italic; }
+  .data-input-inline {
+    font-family: 'Inter', sans-serif; font-size: 0.68rem; width: 92px; padding: 3px 2px;
+    border: 1.5px solid var(--forest-dark); border-radius: 2px; background: var(--paper); color: var(--ink);
+  }
+
+  /* Appuntamenti */
+  .appuntamento { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .appuntamento:last-child { border-bottom: none; }
+  .appuntamento .checkbox {
+    width: 22px; height: 22px; border: 2.5px solid var(--forest-dark); border-radius: 3px; flex-shrink: 0;
+    cursor: pointer; background: var(--paper); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700;
+  }
+  .appuntamento-quando { width: 58px; flex-shrink: 0; text-align: center; border: 1.5px solid var(--forest-dark); border-radius: 2px; padding: 3px 2px; }
+  .appuntamento-data { font-size: 0.7rem; font-weight: 700; color: var(--forest-dark); }
+  .appuntamento-ora { font-size: 0.72rem; font-weight: 700; color: var(--ink-soft); }
+  .appuntamento-contenuto { flex: 1; font-size: 0.86rem; }
+  .appuntamento-ora-input {
+    flex: 0 0 90px !important; padding: 9px 8px; border: 1px solid var(--border); border-radius: 3px;
+    background: var(--paper); font-family: inherit; font-size: 0.85rem; color: var(--ink);
+  }
+  #appuntamenti-lista:empty::after { content: "Nessun appuntamento"; font-size: 0.82rem; color: var(--ink-soft); font-style: italic; }
+
+  /* Contatti */
+  .contatto { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .contatto:last-child { border-bottom: none; }
+  .contatto-badge { flex-shrink: 0; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 3px; white-space: nowrap; color: #fff; cursor: pointer; }
+  .contatto-chiamata-fatta { background: var(--forest-dark); }
+  .contatto-chiamata-ricevuta { background: var(--forest); }
+  .contatto-email-fatta { background: var(--brick); }
+  .contatto-email-ricevuta { background: #B08AC9; }
+  .contatto-corpo { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .contatto-riga1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .contatto-nome { font-weight: 700; font-size: 0.88rem; color: var(--ink); }
+  .contatto-data { font-size: 0.72rem; color: var(--ink-soft); font-weight: 600; flex-shrink: 0; }
+  .contatto-recapito { font-size: 0.78rem; color: var(--forest-dark); }
+  .contatto-motivo { font-size: 0.84rem; color: var(--ink); }
+  .contatto-nome-input, .contatto-recapito-input { flex: 0 0 140px !important; }
+  #contatti-lista:empty::after { content: "Nessun contatto registrato"; font-size: 0.82rem; color: var(--ink-soft); font-style: italic; }
+
+  /* Diario / Note-like / To Do */
+  .diario-day { margin-bottom: 7px; }
+  .diario-day .giorno { font-family: 'Fraunces', serif; font-weight: 600; font-size: 0.88rem; color: var(--forest-dark); margin-bottom: 3px; }
+  .diario-entry {
+    display: flex; gap: 8px; padding: 5px 9px; background: var(--surface); border-radius: 3px; margin-bottom: 1px;
+    font-size: 0.86rem; font-weight: 500; align-items: flex-start;
+  }
+  .diario-entry .checkbox {
+    width: 20px; height: 20px; border: 2.5px solid var(--forest-dark); border-radius: 3px; cursor: pointer; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.7rem; font-weight: 700;
+    background: var(--paper); flex-shrink: 0;
+  }
+  .diario-entry .checkbox.checked { background: var(--forest); border-color: var(--forest); }
+  .diario-entry.gestita { opacity: 0.45; }
+  .diario-entry .elimina, .appuntamento .elimina, .contatto .elimina, .appunto .elimina, .spesa .elimina {
+    margin-left: auto; background: none; border: none; cursor: pointer; font-size: 0.85rem; color: var(--ink-soft); flex-shrink: 0; padding: 0 2px;
+  }
+  .diario-entry .elimina:hover, .appuntamento .elimina:hover, .contatto .elimina:hover, .appunto .elimina:hover, .spesa .elimina:hover { color: var(--rosso-allarme); }
+  #todo-lista:empty::after, #diario-lista:empty::after { content: "Niente qui per ora"; font-size: 0.82rem; color: var(--ink-soft); font-style: italic; }
+
+  /* Appunti */
+  .appunto { background: var(--surface); border-left: 3px solid var(--forest); border-radius: 3px; padding: 8px 12px; margin-bottom: 5px; display: flex; }
+  .appunto-corpo { flex: 1; }
+  .appunto-data { font-family: 'Fraunces', serif; font-size: 0.72rem; font-weight: 600; color: var(--forest-dark); margin-bottom: 3px; }
+  .appunto p { font-size: 0.86rem; font-weight: 500; line-height: 1.45; color: var(--ink); white-space: pre-wrap; }
+  .appunto-textarea {
+    width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 4px; background: var(--paper);
+    font-family: inherit; font-size: 0.88rem; color: var(--ink); resize: vertical;
+  }
+  .appunto-textarea:focus { outline: 2px solid var(--forest); outline-offset: 1px; }
+  #appunti-lista:empty::after { content: "Nessun appunto ancora"; font-size: 0.82rem; color: var(--ink-soft); font-style: italic; }
+
+  /* Documenti */
+  .link-row { display: flex; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .link-row:last-child { border-bottom: none; }
+  .link-row .titolo { font-weight: 500; font-size: 0.82rem; flex: 1; }
+  .link-row a { font-size: 0.74rem; color: var(--forest); text-decoration: none; border-bottom: 1px solid var(--forest); }
+  #documenti-lista:empty::after { content: "Nessun documento salvato"; font-size: 0.82rem; color: var(--ink-soft); font-style: italic; }
+
+  /* Spese */
+  .scroll-orizzontale { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .navigatore-mese { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 16px; }
+  .mese-freccia {
+    width: 30px; height: 30px; border: 1.5px solid var(--forest-dark); border-radius: 3px; background: var(--surface);
+    color: var(--forest-dark); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .mese-freccia:hover { background: var(--forest); color: #fff; }
+  .mese-corrente { font-family: 'Fraunces', serif; font-weight: 700; font-size: 1rem; color: var(--ink); min-width: 150px; text-align: center; }
+  .riepilogo-totale { background: var(--surface); border: 1.5px solid var(--forest-dark); border-radius: 3px; padding: 10px 14px; text-align: center; margin-bottom: 16px; }
+  .riepilogo-etichetta { display: block; font-size: 0.7rem; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px; }
+  .riepilogo-importo { display: block; font-family: 'Fraunces', serif; font-size: 1.3rem; font-weight: 700; color: var(--forest-dark); }
+  .riepilogo-categorie { margin-bottom: 8px; padding: 10px 12px; background: var(--surface); border-radius: 3px; }
+  .riepilogo-cat-riga { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; margin-bottom: 5px; }
+  .riepilogo-cat-riga:last-child { margin-bottom: 0; }
+  .riepilogo-cat-nome { width: 90px; flex-shrink: 0; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .riepilogo-cat-barra { flex: 1; height: 8px; background: var(--paper); border-radius: 3px; overflow: hidden; }
+  .riepilogo-cat-barra span { display: block; height: 100%; background: var(--forest); }
+  .riepilogo-cat-val { width: 70px; flex-shrink: 0; text-align: right; font-weight: 600; color: var(--ink-soft); }
+  .spesa { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; min-width: 520px; }
+  .spesa:last-child { border-bottom: none; }
+  .spesa-data { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.74rem; color: var(--forest-dark); width: 40px; flex-shrink: 0; cursor: pointer; }
+  .spesa-descrizione { flex: 1; min-width: 140px; }
+  .spesa-importo { font-weight: 700; font-size: 0.88rem; color: var(--ink); flex-shrink: 0; width: 72px; text-align: right; }
+  .spesa .badge-categoria, .spesa .badge-metodo { width: 76px; text-align: center; overflow: hidden; text-overflow: ellipsis; }
+  .badge-metodo {
+    display: inline-block; font-size: 0.68rem; font-weight: 700; color: var(--ink-soft); background: var(--paper);
+    border: 1px solid var(--border); padding: 0px 7px; border-radius: 3px; flex-shrink: 0; white-space: nowrap; cursor: pointer;
+  }
+  .badge-metodo:hover { background: var(--surface); }
+  #spese-lista:empty::after { content: "Nessuna spesa in questo mese"; font-size: 0.82rem; color: var(--ink-soft); font-style: italic; }
+
+  .add-row { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .add-row input {
+    flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 3px; background: var(--paper);
+    font-family: inherit; font-size: 0.85rem; color: var(--ink);
+  }
+  .diario-data-input { flex: 0 0 140px !important; }
+  .tag-input { flex: 0 0 180px !important; }
+  @media (max-width: 700px) { .tag-input, .contatto-nome-input, .contatto-recapito-input { flex-basis: 100% !important; } }
+  .allarme-toggle { display: flex; align-items: center; gap: 5px; font-size: 0.82rem; font-weight: 600; color: var(--forest-dark); white-space: nowrap; cursor: pointer; flex: 0 0 auto; }
+  .allarme-toggle input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--forest); }
+  .anticipo-wrap-scad { display: flex; align-items: center; gap: 7px; font-size: 0.82rem; font-weight: 500; color: var(--ink-soft); white-space: nowrap; }
+  .anticipo-valore { min-width: 22px; text-align: center; font-size: 0.95rem; font-weight: 700; color: var(--ink); }
+  .add-row button {
+    padding: 9px 16px; background: var(--forest); color: #fff; border: none; border-radius: 3px;
+    font-size: 0.85rem; font-weight: 700; cursor: pointer; flex: 0 0 auto;
+  }
+
+  footer.note { padding: 10px 28px; font-size: 0.72rem; color: var(--ink-soft); border-top: 1px solid var(--border); background: var(--paper); }
+
+  @media print {
+    body { background: #fff; padding: 0; display: block; }
+    #login, #chi-sei { display: none !important; }
+    #app { max-width: 100%; border: none; }
+    header.appbar, .search-row, nav.tabs, footer.note, .add-row { display: none !important; }
+    section.panel { padding: 0; }
+    [contenteditable="true"]:hover, [contenteditable="true"]:focus { background: none !important; outline: none !important; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="login">
+    <h1>Agenda Personale</h1>
+    <p class="tag">Inserisci il PIN per accedere</p>
+    <input type="password" id="pin-input" maxlength="4" placeholder="• • • •" inputmode="numeric">
+    <div id="pin-errore">PIN errato, riprova.</div>
+    <button class="btn-primary" id="btn-login" onclick="tentaLogin()">Entra</button>
+  </div>
+
+  <div id="app">
+    <header class="appbar">
+      <h1>Agenda Personale</h1>
+      <span id="stato-connessione">Connessione…</span>
+    </header>
+
+    <div class="search-row">
+      <div class="search-input-wrap">
+        <input type="text" id="ricerca" placeholder="Cerca in to do, scadenze, appuntamenti, contatti, diario, appunti, documenti, spese…" oninput="cerca(this.value)">
+        <button class="btn-clear-ricerca" onclick="pulisciRicerca()" title="Cancella ricerca">✕</button>
+      </div>
+      <div class="search-hint" id="search-hint" style="display:none;"></div>
+      <div class="azioni-export">
+        <button class="btn-export" onclick="stampaVista()">🖨 Stampa</button>
+        <button class="btn-export" onclick="scaricaVista()">⬇ Scarica</button>
+      </div>
+    </div>
+
+    <nav class="tabs" id="nav-tabs">
+      <button class="active" onclick="mostra('todo', this)">To Do</button>
+      <button onclick="mostra('scadenze', this)">Scadenze</button>
+      <button onclick="mostra('appuntamenti', this)">Appuntamenti</button>
+      <button onclick="mostra('contatti', this)">Contatti</button>
+      <button onclick="mostra('diario', this)">Diario</button>
+      <button onclick="mostra('appunti', this)">Appunti</button>
+      <button onclick="mostra('documenti', this)">Documenti</button>
+      <button onclick="mostra('spese', this)">Spese</button>
+      <button onclick="mostra('completate', this)">Completate</button>
+    </nav>
+
+    <section class="panel active" id="todo">
+      <h2 class="panel-title">To Do</h2>
+      <div id="todo-lista"></div>
+      <div class="add-row">
+        <input type="text" id="todo-input" placeholder="Nuovo task…" onkeydown="if(event.key==='Enter') aggiungiTodo()">
+        <button onclick="aggiungiTodo()">Aggiungi</button>
+      </div>
+    </section>
+
+    <section class="panel" id="scadenze">
+      <h2 class="panel-title">Prossime scadenze</h2>
+      <div class="filtri-categoria" id="filtri-scadenze"></div>
+      <div id="scadenze-attive"></div>
+      <div class="add-row scadenza-add-row">
+        <input type="date" id="scadenza-data-input" class="diario-data-input">
+        <input type="text" id="scadenza-input" placeholder="Nuova scadenza…" style="flex:1;">
+        <select id="scadenza-categoria" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'scadenze')"></select>
+        <label class="allarme-toggle"><input type="checkbox" id="scadenza-allarme" onchange="toggleAnticipo(this)"> 🔔 Allarme</label>
+        <span class="anticipo-wrap-scad" id="anticipo-wrap" style="display:none;">
+          avvisami
+          <button type="button" class="anticipo-btn" onclick="cambiaAnticipo(-1)">−</button>
+          <span class="anticipo-valore" id="anticipo-valore">1</span>
+          <button type="button" class="anticipo-btn" onclick="cambiaAnticipo(1)">+</button>
+          <span id="anticipo-label">giorni prima</span>
+        </span>
+        <button onclick="aggiungiScadenza()">Aggiungi</button>
+      </div>
+    </section>
+
+    <section class="panel" id="appuntamenti">
+      <h2 class="panel-title">Appuntamenti</h2>
+      <div id="appuntamenti-lista"></div>
+      <div class="add-row appuntamento-add-row">
+        <input type="date" id="appuntamento-data-input" class="diario-data-input">
+        <input type="time" id="appuntamento-ora-input" class="appuntamento-ora-input">
+        <input type="text" id="appuntamento-input" placeholder="Appuntamento…" style="flex:1;">
+        <label class="allarme-toggle"><input type="checkbox" id="appuntamento-allarme" onchange="toggleAnticipoAppuntamento(this)"> 🔔 Allarme</label>
+        <select class="categoria-select" id="appuntamento-anticipo" style="display:none;">
+          <option value="7200">5 giorni prima</option>
+          <option value="5760">4 giorni prima</option>
+          <option value="4320">3 giorni prima</option>
+          <option value="2880">2 giorni prima</option>
+          <option value="1440">1 giorno prima</option>
+          <option value="60">1 ora prima</option>
+          <option value="30">30 minuti prima</option>
+        </select>
+        <button onclick="aggiungiAppuntamento()">Aggiungi</button>
+      </div>
+    </section>
+
+    <section class="panel" id="contatti">
+      <h2 class="panel-title">Contatti — chiamate e mail</h2>
+      <div id="contatti-lista"></div>
+      <div class="add-row contatto-add-row">
+        <input type="date" id="contatto-data-input" class="diario-data-input">
+        <select class="categoria-select" id="contatto-tipo">
+          <option value="chiamata-fatta">📞 Chiamata fatta</option>
+          <option value="chiamata-ricevuta">📞 Chiamata ricevuta</option>
+          <option value="email-fatta">📧 Email fatta</option>
+          <option value="email-ricevuta">📧 Email ricevuta</option>
+        </select>
+        <input type="text" id="contatto-nome-input" placeholder="Nominativo…" class="contatto-nome-input">
+        <input type="text" id="contatto-recapito-input" placeholder="Telefono/email (opzionale)…" class="contatto-recapito-input">
+        <input type="text" id="contatto-motivo-input" placeholder="Motivo…" style="flex:1;">
+        <button onclick="aggiungiContatto()">Aggiungi</button>
+      </div>
+    </section>
+
+    <section class="panel" id="diario">
+      <h2 class="panel-title">Diario giornaliero</h2>
+      <div id="diario-lista"></div>
+      <div class="add-row diario-add-row">
+        <input type="date" id="diario-data-input" class="diario-data-input">
+        <input type="text" id="diario-input" placeholder="Cosa è successo?" style="flex:1;" onkeydown="if(event.key==='Enter') aggiungiDiario()">
+        <button onclick="aggiungiDiario()">Aggiungi</button>
+      </div>
+    </section>
+
+    <section class="panel" id="appunti">
+      <h2 class="panel-title">Appunti</h2>
+      <div id="appunti-lista"></div>
+      <textarea class="appunto-textarea" id="appunto-input" placeholder="Scrivi un nuovo appunto…" rows="3"></textarea>
+      <div class="add-row" style="margin-top:8px;">
+        <button style="flex:0 0 auto; padding:9px 20px;" onclick="aggiungiAppunto()">Salva appunto</button>
+      </div>
+    </section>
+
+    <section class="panel" id="documenti">
+      <h2 class="panel-title">Documenti</h2>
+      <div class="filtri-categoria" id="filtri-documenti"></div>
+      <div id="documenti-lista"></div>
+      <div class="add-row documento-add-row">
+        <input type="text" id="documento-tag-input" placeholder="Titolino (es. Polizza auto)…" class="tag-input">
+        <input type="text" id="documento-titolo-input" placeholder="Descrizione…" style="flex:1;">
+        <input type="text" id="documento-url-input" placeholder="Link…" style="flex:1;">
+        <select id="documento-categoria" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'documenti')"></select>
+        <button onclick="aggiungiDocumento()">Aggiungi</button>
+      </div>
+      <div class="search-hint" style="display:block; margin-top:6px;">Per ora solo link (es. a Google Drive/Foto) — caricamento diretto valutabile in futuro.</div>
+    </section>
+
+    <section class="panel" id="spese">
+      <h2 class="panel-title">Spese</h2>
+      <div class="navigatore-mese">
+        <button class="mese-freccia" onclick="cambiaMese(-1)">‹</button>
+        <span class="mese-corrente" id="mese-corrente-label"></span>
+        <button class="mese-freccia" onclick="cambiaMese(1)">›</button>
+      </div>
+      <div class="riepilogo-totale">
+        <span class="riepilogo-etichetta">Totale mese</span>
+        <span class="riepilogo-importo" id="totale-mese-label">€ 0,00</span>
+      </div>
+      <div class="filtri-categoria" id="filtri-spese"></div>
+      <div class="scroll-orizzontale"><div id="spese-lista"></div></div>
+      <div class="add-row spesa-add-row">
+        <input type="date" id="spesa-data-input" class="diario-data-input">
+        <input type="text" id="spesa-motivo-input" placeholder="Per cosa…" style="flex:1;">
+        <input type="number" step="0.01" id="spesa-importo-input" placeholder="Importo €" class="spesa-importo-input" style="flex:0 0 100px;">
+        <select id="spesa-categoria" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-categoria')"></select>
+        <select id="spesa-metodo" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-metodo')"></select>
+        <button onclick="aggiungiSpesa()">Aggiungi</button>
+      </div>
+      <div class="search-hint" style="display:block; margin-top:6px;">Foto scontrino: per ora un campo link (es. a una foto su Drive/Foto) nella descrizione — caricamento diretto valutabile in futuro.</div>
+
+      <h3 class="sottotitolo" style="margin-top:22px;">Riepilogo per categoria — questo mese</h3>
+      <div class="riepilogo-categorie" id="riepilogo-mese"></div>
+
+      <h3 class="sottotitolo" style="margin-top:16px;" id="riepilogo-anno-titolo">Riepilogo per categoria — anno</h3>
+      <div class="riepilogo-categorie" id="riepilogo-anno"></div>
+    </section>
+
+    <section class="panel" id="completate">
+      <h2 class="panel-title">Scadenze completate</h2>
+      <div id="scadenze-completate"></div>
+    </section>
+
+    <footer class="note">Agenda Personale · v1.0 · dati salvati su Firebase in tempo reale</footer>
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc,
+  onSnapshot, serverTimestamp, query, where, getDocs
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCyCcHTttXQkPXgXlWSDGonjCr1CT_fk2A",
+  authDomain: "agenda-personale-a541c.firebaseapp.com",
+  projectId: "agenda-personale-a541c",
+  storageBucket: "agenda-personale-a541c.firebasestorage.app",
+  messagingSenderId: "725759340576",
+  appId: "1:725759340576:web:4e70a7806a1af9d97acc45"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+async function sha256(testo) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(testo));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+const PIN_HASH_REALE = await sha256("6116");
+
+window.tentaLogin = async function() {
+  const btn = document.getElementById('btn-login');
+  const val = document.getElementById('pin-input').value;
+  const errore = document.getElementById('pin-errore');
+  btn.disabled = true;
+  const hashInserito = await sha256(val);
+  if (hashInserito === PIN_HASH_REALE) {
+    try {
+      await signInAnonymously(auth);
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      avviaAscoltoDati();
+    } catch (e) {
+      errore.textContent = "Errore di connessione, riprova.";
+      errore.style.display = 'block';
+      btn.disabled = false;
+    }
+  } else {
+    errore.textContent = "PIN errato, riprova.";
+    errore.style.display = 'block';
+    document.getElementById('pin-input').value = '';
+    btn.disabled = false;
+  }
+};
+document.getElementById('pin-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') tentaLogin(); });
+
+// ============================================================
+// UTILITÀ
+// ============================================================
+const MESI = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+const MESI_LUNGHI = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+const GIORNI_SETT = ['do','lu','ma','me','gi','ve','sa'];
+
+function oggiISO() { return new Date().toISOString().split('T')[0]; }
+function formatDataBreve(dataISO) {
+  const d = new Date(dataISO + 'T00:00:00');
+  return { giorno: String(d.getDate()).padStart(2, '0'), mese: MESI[d.getMonth()].toUpperCase(), anno: String(d.getFullYear()).slice(-2), sett: GIORNI_SETT[d.getDay()] };
+}
+function formatDataCorta(dataISO) {
+  const d = new Date(dataISO + 'T00:00:00');
+  return String(d.getDate()).padStart(2,'0') + ' ' + MESI[d.getMonth()];
+}
+function formatGiornoLungo(dataISO) {
+  const d = new Date(dataISO + 'T00:00:00');
+  const oggi = new Date(); oggi.setHours(0,0,0,0);
+  const ieri = new Date(oggi); ieri.setDate(ieri.getDate() - 1);
+  const dCheck = new Date(d); dCheck.setHours(0,0,0,0);
+  if (dCheck.getTime() === oggi.getTime()) return 'Oggi — ' + d.getDate() + ' ' + MESI_LUNGHI[d.getMonth()];
+  if (dCheck.getTime() === ieri.getTime()) return 'Ieri — ' + d.getDate() + ' ' + MESI_LUNGHI[d.getMonth()];
+  return d.getDate() + ' ' + MESI_LUNGHI[d.getMonth()];
+}
+function contoAllaRovescia(dataISO) {
+  const oggi = new Date(); oggi.setHours(0,0,0,0);
+  const scadenza = new Date(dataISO + 'T00:00:00');
+  const diffGiorni = Math.round((scadenza - oggi) / 86400000);
+  let testo, urgente = false;
+  if (diffGiorni < 0) { testo = 'scaduta'; urgente = true; }
+  else if (diffGiorni === 0) { testo = 'oggi'; urgente = true; }
+  else if (diffGiorni === 1) { testo = 'domani'; urgente = true; }
+  else if (diffGiorni <= 6) { testo = 'tra ' + diffGiorni + ' giorni'; urgente = true; }
+  else if (diffGiorni <= 60) { testo = 'tra ' + Math.round(diffGiorni / 7) + ' settimane'; }
+  else { testo = 'tra ' + Math.round(diffGiorni / 30) + ' mesi'; }
+  return { testo, urgente, diffGiorni };
+}
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+function abilitaModifica(el, coll, id, campo) {
+  el.setAttribute('contenteditable', 'true');
+  el.addEventListener('blur', async () => {
+    const nuovo = el.textContent.trim();
+    if (nuovo === '') return;
+    try { await updateDoc(doc(db, coll, id), { [campo]: nuovo }); } catch (e) { console.error(e); }
+  });
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });
+}
+
+// ============================================================
+// CATEGORIE (generico, Firebase-backed, per scadenze/documenti/spese-categoria/spese-metodo)
+// ============================================================
+const LISTE_CATEGORIE = {
+  'scadenze': ['Bandi', 'Casa', 'Auto', 'Salute', 'Altro'],
+  'documenti': ['Casa', 'Auto', 'Salute', 'Altro'],
+  'spese-categoria': ['Alimentari', 'Trasporti', 'Casa', 'Salute', 'Svago', 'Altro'],
+  'spese-metodo': ['Contanti', 'Carta', 'Bonifico', 'Altro']
+};
+const SELECT_PER_TIPO = {
+  'scadenze': 'scadenza-categoria',
+  'documenti': 'documento-categoria',
+  'spese-categoria': 'spesa-categoria',
+  'spese-metodo': 'spesa-metodo'
+};
+
+async function inizializzaListaCategorie(tipo) {
+  const refDoc = doc(db, 'categorie', tipo);
+  onSnapshot(refDoc, async (snap) => {
+    if (snap.exists() && Array.isArray(snap.data().lista)) {
+      LISTE_CATEGORIE[tipo] = snap.data().lista;
+      aggiornaSelectCategoria(SELECT_PER_TIPO[tipo], LISTE_CATEGORIE[tipo]);
+      if (tipo === 'scadenze') renderFiltriScadenze(ultimiDocsScadenze);
+      if (tipo === 'documenti') renderFiltriDocumenti(ultimiDocsDocumenti);
+      if (tipo === 'spese-categoria') renderFiltriSpese(ultimiDocsSpese);
+    } else {
+      try { await setDoc(refDoc, { lista: LISTE_CATEGORIE[tipo] }); } catch (e) {}
+    }
+  });
+}
+function aggiornaSelectCategoria(selectId, lista) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  const valorePrecedente = select.value;
+  select.innerHTML = '';
+  lista.forEach(cat => {
+    const opz = document.createElement('option');
+    opz.value = cat; opz.textContent = cat;
+    select.appendChild(opz);
+  });
+  const nuovaOpz = document.createElement('option');
+  nuovaOpz.value = '__nuova__'; nuovaOpz.textContent = '+ Nuova…';
+  select.appendChild(nuovaOpz);
+  if (lista.includes(valorePrecedente)) select.value = valorePrecedente;
+}
+Object.keys(LISTE_CATEGORIE).forEach(tipo => {
+  aggiornaSelectCategoria(SELECT_PER_TIPO[tipo], LISTE_CATEGORIE[tipo]);
+  inizializzaListaCategorie(tipo);
+});
+
+window.gestisciNuovaCategoria = async function(select, tipo) {
+  if (select.value === '__nuova__') {
+    const nome = prompt('Nome della nuova voce:');
+    if (nome && nome.trim() !== '') {
+      const nomeFinale = nome.trim();
+      const refDoc = doc(db, 'categorie', tipo);
+      const listaAttuale = LISTE_CATEGORIE[tipo];
+      if (!listaAttuale.includes(nomeFinale)) {
+        const nuovaLista = [...listaAttuale.filter(c => c !== 'Altro'), nomeFinale, 'Altro'];
+        await setDoc(refDoc, { lista: nuovaLista });
+      }
+      select.value = nomeFinale;
+    } else { select.value = 'Altro'; }
+  }
+};
+
+window.gestisciCategorie = async function(tipo, collezione, campo) {
+  const lista = LISTE_CATEGORIE[tipo];
+  const elenco = lista.map((c, i) => (i + 1) + '. ' + c).join('\n');
+  const scelta = prompt('Quale vuoi modificare o eliminare?\n\n' + elenco + '\n\nScrivi il numero:');
+  if (!scelta) return;
+  const indice = parseInt(scelta, 10) - 1;
+  if (isNaN(indice) || indice < 0 || indice >= lista.length) { alert('Numero non valido.'); return; }
+  const categoriaScelta = lista[indice];
+  if (categoriaScelta === 'Altro') { alert('"Altro" non si può modificare né eliminare.'); return; }
+
+  const azione = prompt('"' + categoriaScelta + '":\n\n- Scrivi il NUOVO NOME per rinominarla\n- Scrivi ELIMINA per cancellarla (le voci passeranno ad "Altro")\n- Lascia vuoto per annullare');
+  if (!azione || azione.trim() === '') return;
+
+  const refDoc = doc(db, 'categorie', tipo);
+  if (azione.trim().toUpperCase() === 'ELIMINA') {
+    if (!confirm('Confermi di eliminare "' + categoriaScelta + '"?')) return;
+    const nuovaLista = lista.filter(c => c !== categoriaScelta);
+    await setDoc(refDoc, { lista: nuovaLista });
+    const q = query(collection(db, collezione), where(campo, '==', categoriaScelta));
+    const risultati = await getDocs(q);
+    for (const docSnap of risultati.docs) { await updateDoc(doc(db, collezione, docSnap.id), { [campo]: 'Altro' }); }
+  } else {
+    const nuovoNome = azione.trim();
+    const nuovaLista = lista.map(c => c === categoriaScelta ? nuovoNome : c);
+    await setDoc(refDoc, { lista: nuovaLista });
+    const q = query(collection(db, collezione), where(campo, '==', categoriaScelta));
+    const risultati = await getDocs(q);
+    for (const docSnap of risultati.docs) { await updateDoc(doc(db, collezione, docSnap.id), { [campo]: nuovoNome }); }
+  }
+};
+
+window.cambiaCategoriaVoce = function(id, valoreAttuale, tipo, collezione, campo, badgeEl) {
+  const lista = LISTE_CATEGORIE[tipo];
+  const select = document.createElement('select');
+  select.className = 'categoria-select';
+  lista.forEach(cat => {
+    const opz = document.createElement('option');
+    opz.value = cat; opz.textContent = cat;
+    if (cat === valoreAttuale) opz.selected = true;
+    select.appendChild(opz);
+  });
+  select.onchange = async () => { await updateDoc(doc(db, collezione, id), { [campo]: select.value }); };
+  select.onblur = () => { if (select.parentNode) select.parentNode.replaceChild(badgeEl, select); };
+  badgeEl.parentNode.replaceChild(select, badgeEl);
+  select.focus();
+};
+
+// ============================================================
+// TO DO
+// ============================================================
+window.aggiungiTodo = async function() {
+  const input = document.getElementById('todo-input');
+  const testo = input.value.trim();
+  if (!testo) return;
+  input.value = '';
+  await addDoc(collection(db, 'todos'), { testo, fatto: false, creato: serverTimestamp() });
+};
+window.toggleTodo = async function(id, fattoAttuale) { await updateDoc(doc(db, 'todos', id), { fatto: !fattoAttuale }); };
+window.eliminaTodo = async function(id) { await deleteDoc(doc(db, 'todos', id)); };
+
+function renderTodos(snap) {
+  const cont = document.getElementById('todo-lista');
+  cont.innerHTML = '';
+  snap.forEach(docSnap => {
+    const t = docSnap.data();
+    const el = document.createElement('div');
+    el.className = 'diario-entry' + (t.fatto ? ' gestita' : '');
+    el.setAttribute('data-search', t.testo.toLowerCase());
+    el.innerHTML = `
+      <div class="checkbox ${t.fatto ? 'checked' : ''}" onclick="toggleTodo('${docSnap.id}', ${t.fatto})">${t.fatto ? '✓' : ''}</div>
+      <span class="contenuto-nota">${escapeHtml(t.testo)}</span>
+      <button class="elimina" onclick="eliminaTodo('${docSnap.id}')" title="Elimina">🗑</button>
+    `;
+    abilitaModifica(el.querySelector('.contenuto-nota'), 'todos', docSnap.id, 'testo');
+    cont.appendChild(el);
+  });
+}
+
+// ============================================================
+// SCADENZE
+// ============================================================
+document.getElementById('scadenza-data-input').value = oggiISO();
+document.getElementById('diario-data-input').value = oggiISO();
+document.getElementById('appuntamento-data-input').value = oggiISO();
+document.getElementById('contatto-data-input').value = oggiISO();
+document.getElementById('spesa-data-input').value = oggiISO();
+
+let filtroAttivoScadenze = null, filtroAttivoDocumenti = null, filtroAttivoSpese = null;
+let ultimiDocsScadenze = [], ultimiDocsDocumenti = [], ultimiDocsSpese = [];
+
+window.toggleAnticipo = function(checkbox) { document.getElementById('anticipo-wrap').style.display = checkbox.checked ? 'flex' : 'none'; };
+window.cambiaAnticipo = function(delta) {
+  const el = document.getElementById('anticipo-valore');
+  let val = parseInt(el.textContent, 10) + delta;
+  if (val < 0) val = 0; if (val > 90) val = 90;
+  el.textContent = val;
+  document.getElementById('anticipo-label').textContent = val === 0 ? 'il giorno stesso' : (val === 1 ? 'giorno prima' : 'giorni prima');
+};
+
+window.aggiungiScadenza = async function() {
+  const testo = document.getElementById('scadenza-input').value.trim();
+  const data = document.getElementById('scadenza-data-input').value;
+  if (!testo || !data) return;
+  const categoria = document.getElementById('scadenza-categoria').value;
+  const allarme = document.getElementById('scadenza-allarme').checked;
+  const anticipo = allarme ? parseInt(document.getElementById('anticipo-valore').textContent, 10) : null;
+  await addDoc(collection(db, 'scadenze'), { testo, data, categoria, fatto: false, allarme, anticipo, creato: serverTimestamp() });
+  document.getElementById('scadenza-input').value = '';
+  document.getElementById('scadenza-allarme').checked = false;
+  document.getElementById('anticipo-wrap').style.display = 'none';
+  document.getElementById('anticipo-valore').textContent = '1';
+};
+window.toggleScadenza = async function(id, fattoAttuale) { await updateDoc(doc(db, 'scadenze', id), { fatto: !fattoAttuale }); };
+window.eliminaScadenza = async function(id) {
+  if (!confirm('Eliminare definitivamente questa scadenza?')) return;
+  await deleteDoc(doc(db, 'scadenze', id));
+};
+window.cambiaDataScadenza = function(id, dataAttuale, dataEl) {
+  const input = document.createElement('input');
+  input.type = 'date'; input.value = dataAttuale; input.className = 'data-input-inline';
+  input.onchange = async () => { await updateDoc(doc(db, 'scadenze', id), { data: input.value }); };
+  input.onblur = () => { if (input.parentNode) input.parentNode.replaceChild(dataEl, input); };
+  dataEl.parentNode.replaceChild(input, dataEl);
+  input.focus();
+};
+window.cambiaAnticipoScadenza = function(id, anticipoAttuale, metaEl) {
+  const wrap = document.createElement('span');
+  wrap.className = 'anticipo-edit-inline';
+  let valore = anticipoAttuale;
+  const testoUnita = (v) => v === 0 ? 'il giorno stesso' : (v === 1 ? 'giorno prima' : v + ' giorni prima');
+  wrap.innerHTML = `avvisami <button type="button" class="anticipo-btn">−</button><span class="anticipo-valore-inline">${testoUnita(valore)}</span><button type="button" class="anticipo-btn">+</button>`;
+  const [btnMeno, btnPiu] = wrap.querySelectorAll('.anticipo-btn');
+  const valoreEl = wrap.querySelector('.anticipo-valore-inline');
+  const aggiorna = async (delta) => {
+    valore = Math.max(0, Math.min(90, valore + delta));
+    valoreEl.textContent = testoUnita(valore);
+    await updateDoc(doc(db, 'scadenze', id), { anticipo: valore });
+  };
+  btnMeno.onclick = () => aggiorna(-1);
+  btnPiu.onclick = () => aggiorna(1);
+  metaEl.parentNode.replaceChild(wrap, metaEl);
+};
+
+window.filtraCategoriaScadenze = function(cat) { filtroAttivoScadenze = cat; renderFiltriScadenze(ultimiDocsScadenze); applicaFiltroScadenze(); };
+function applicaFiltroScadenze() {
+  document.querySelectorAll('#scadenze-attive .scadenza').forEach(el => {
+    const cat = el.getAttribute('data-categoria');
+    el.style.display = (!filtroAttivoScadenze || cat === filtroAttivoScadenze) ? '' : 'none';
+  });
+}
+function renderFiltriScadenze(docs) {
+  const wrap = document.getElementById('filtri-scadenze');
+  const cats = new Set(LISTE_CATEGORIE['scadenze']);
+  docs.forEach(d => { if (d.categoria) cats.add(d.categoria); });
+  wrap.innerHTML = '';
+  const t = document.createElement('button');
+  t.className = 'filtro-chip' + (!filtroAttivoScadenze ? ' attivo' : '');
+  t.textContent = 'Tutte'; t.onclick = () => filtraCategoriaScadenze(null);
+  wrap.appendChild(t);
+  cats.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'filtro-chip' + (filtroAttivoScadenze === cat ? ' attivo' : '');
+    b.textContent = cat; b.onclick = () => filtraCategoriaScadenze(cat);
+    wrap.appendChild(b);
+  });
+  const gear = document.createElement('button');
+  gear.className = 'filtro-chip'; gear.title = 'Modifica o elimina categorie'; gear.textContent = '⚙';
+  gear.onclick = () => gestisciCategorie('scadenze', 'scadenze', 'categoria');
+  wrap.appendChild(gear);
+}
+
+function renderScadenze(snap) {
+  const attive = document.getElementById('scadenze-attive');
+  const completate = document.getElementById('scadenze-completate');
+  attive.innerHTML = ''; completate.innerHTML = '';
+  const docs = [];
+  snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+  docs.sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+  ultimiDocsScadenze = docs;
+  renderFiltriScadenze(docs);
+
+  docs.forEach(s => {
+    const breve = formatDataBreve(s.data);
+    const cr = contoAllaRovescia(s.data);
+    const el = document.createElement('div');
+    el.className = 'scadenza' + ((cr.urgente && !s.fatto) ? ' urgente' : '');
+    el.setAttribute('data-search', s.testo.toLowerCase());
+    el.setAttribute('data-categoria', s.categoria || 'Altro');
+    el.innerHTML = `
+      <div class="checkbox ${s.fatto ? 'checked' : ''}" onclick="toggleScadenza('${s.id}', ${s.fatto})">${s.fatto ? '✓' : ''}</div>
+      <div class="data data-cliccabile" title="Clicca per cambiare la data">${breve.giorno} ${breve.mese} '${breve.anno}<small>${breve.sett}</small></div>
+      <div class="contenuto">
+        <div class="titolo"><span class="titolo-testo">${escapeHtml(s.testo)}</span> <span class="badge-urgente">(${cr.testo})</span></div>
+        ${s.allarme ? '<div class="meta' + ((s.anticipo !== null && s.anticipo !== undefined && cr.diffGiorni <= s.anticipo) ? ' meta-allarme-pulsante' : '') + '" title="Clicca per cambiare quando avvisare">🔔 allarme attivo</div>' : ''}
+      </div>
+      <span class="badge-categoria badge-cat-cliccabile" title="Clicca per cambiare categoria">${escapeHtml(s.categoria || 'Altro')}</span>
+      <button class="elimina" onclick="eliminaScadenza('${s.id}')" title="Elimina definitivamente">🗑</button>
+    `;
+    abilitaModifica(el.querySelector('.titolo-testo'), 'scadenze', s.id, 'testo');
+    el.querySelector('.badge-cat-cliccabile').onclick = function() { cambiaCategoriaVoce(s.id, s.categoria || 'Altro', 'scadenze', 'scadenze', 'categoria', this); };
+    el.querySelector('.data-cliccabile').onclick = function() { cambiaDataScadenza(s.id, s.data, this); };
+    const metaEl = el.querySelector('.meta');
+    if (metaEl) metaEl.onclick = () => cambiaAnticipoScadenza(s.id, s.anticipo || 0, metaEl);
+    (s.fatto ? completate : attive).appendChild(el);
+  });
+  applicaFiltroScadenze();
+}
+
+// ============================================================
+// APPUNTAMENTI
+// ============================================================
+window.toggleAnticipoAppuntamento = function(checkbox) { document.getElementById('appuntamento-anticipo').style.display = checkbox.checked ? 'inline-block' : 'none'; };
+
+window.aggiungiAppuntamento = async function() {
+  const titolo = document.getElementById('appuntamento-input').value.trim();
+  const data = document.getElementById('appuntamento-data-input').value;
+  const ora = document.getElementById('appuntamento-ora-input').value;
+  if (!titolo || !data) return;
+  const allarme = document.getElementById('appuntamento-allarme').checked;
+  const anticipoMinuti = allarme ? parseInt(document.getElementById('appuntamento-anticipo').value, 10) : null;
+  await addDoc(collection(db, 'appuntamenti'), { titolo, data, ora: ora || '', allarme, anticipoMinuti, creato: serverTimestamp() });
+  document.getElementById('appuntamento-input').value = '';
+  document.getElementById('appuntamento-ora-input').value = '';
+  document.getElementById('appuntamento-allarme').checked = false;
+  document.getElementById('appuntamento-anticipo').style.display = 'none';
+};
+window.eliminaAppuntamento = async function(id) {
+  if (!confirm('Eliminare questo appuntamento?')) return;
+  await deleteDoc(doc(db, 'appuntamenti', id));
+};
+window.spuntaAppuntamento = async function(id, titolo, data) {
+  await addDoc(collection(db, 'diario'), { testo: titolo, data, creato: serverTimestamp() });
+  await deleteDoc(doc(db, 'appuntamenti', id));
+};
+window.cambiaAnticipoAppuntamento = function(id, anticipoAttuale, metaEl) {
+  const opzioni = [7200, 5760, 4320, 2880, 1440, 60, 30];
+  const etichette = { 7200: '5 giorni prima', 5760: '4 giorni prima', 4320: '3 giorni prima', 2880: '2 giorni prima', 1440: '1 giorno prima', 60: '1 ora prima', 30: '30 minuti prima' };
+  const select = document.createElement('select');
+  select.className = 'categoria-select';
+  opzioni.forEach(v => {
+    const opz = document.createElement('option');
+    opz.value = v; opz.textContent = etichette[v];
+    if (v === anticipoAttuale) opz.selected = true;
+    select.appendChild(opz);
+  });
+  select.onchange = async () => { await updateDoc(doc(db, 'appuntamenti', id), { anticipoMinuti: parseInt(select.value, 10) }); };
+  select.onblur = () => { if (select.parentNode) select.parentNode.replaceChild(metaEl, select); };
+  metaEl.parentNode.replaceChild(select, metaEl);
+  select.focus();
+};
+
+function renderAppuntamenti(snap) {
+  const cont = document.getElementById('appuntamenti-lista');
+  cont.innerHTML = '';
+  const docs = [];
+  snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+  docs.sort((a, b) => (a.data + (a.ora||'')).localeCompare(b.data + (b.ora||'')));
+  docs.forEach(a => {
+    const dataBreve = formatDataCorta(a.data);
+    let allarmeAttivo = false;
+    if (a.allarme && a.anticipoMinuti !== null && a.anticipoMinuti !== undefined) {
+      const scad = new Date(a.data + 'T' + (a.ora || '00:00') + ':00');
+      const diffMin = (scad - new Date()) / 60000;
+      allarmeAttivo = diffMin <= a.anticipoMinuti;
+    }
+    const el = document.createElement('div');
+    el.className = 'appuntamento';
+    el.setAttribute('data-search', a.titolo.toLowerCase());
+    el.innerHTML = `
+      <div class="checkbox" title="Segna come fatto → passa al Diario"></div>
+      <div class="appuntamento-quando"><div class="appuntamento-data">${dataBreve}</div>${a.ora ? '<div class="appuntamento-ora">' + a.ora + '</div>' : ''}</div>
+      <div class="appuntamento-contenuto">
+        <span class="appuntamento-titolo">${escapeHtml(a.titolo)}</span>
+        ${a.allarme ? '<div class="meta' + (allarmeAttivo ? ' meta-allarme-pulsante' : '') + '" title="Clicca per cambiare quando avvisare">🔔 allarme attivo</div>' : ''}
+      </div>
+      <button class="elimina" onclick="eliminaAppuntamento('${a.id}')" title="Elimina">🗑</button>
+    `;
+    el.querySelector('.checkbox').onclick = () => spuntaAppuntamento(a.id, a.titolo, a.data);
+    abilitaModifica(el.querySelector('.appuntamento-titolo'), 'appuntamenti', a.id, 'titolo');
+    const metaEl = el.querySelector('.meta');
+    if (metaEl) metaEl.onclick = () => cambiaAnticipoAppuntamento(a.id, a.anticipoMinuti, metaEl);
+    cont.appendChild(el);
+  });
+}
+
+// ============================================================
+// CONTATTI
+// ============================================================
+const ETICHETTE_TIPO_CONTATTO = {
+  'chiamata-fatta': '📞 Fatta', 'chiamata-ricevuta': '📞 Ricevuta',
+  'email-fatta': '📧 Fatta', 'email-ricevuta': '📧 Ricevuta'
+};
+window.aggiungiContatto = async function() {
+  const nome = document.getElementById('contatto-nome-input').value.trim();
+  const motivo = document.getElementById('contatto-motivo-input').value.trim();
+  const data = document.getElementById('contatto-data-input').value;
+  if (!nome || !motivo || !data) return;
+  const tipo = document.getElementById('contatto-tipo').value;
+  const recapito = document.getElementById('contatto-recapito-input').value.trim();
+  await addDoc(collection(db, 'contatti'), { nome, motivo, data, tipo, recapito, creato: serverTimestamp() });
+  document.getElementById('contatto-nome-input').value = '';
+  document.getElementById('contatto-recapito-input').value = '';
+  document.getElementById('contatto-motivo-input').value = '';
+};
+window.eliminaContatto = async function(id) {
+  if (!confirm('Eliminare questo contatto?')) return;
+  await deleteDoc(doc(db, 'contatti', id));
+};
+
+function renderContatti(snap) {
+  const cont = document.getElementById('contatti-lista');
+  cont.innerHTML = '';
+  const docs = [];
+  snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+  docs.sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+  docs.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'contatto';
+    el.setAttribute('data-search', (c.nome + ' ' + c.motivo + ' ' + (c.recapito||'')).toLowerCase());
+    el.innerHTML = `
+      <span class="contatto-badge contatto-${c.tipo}">${ETICHETTE_TIPO_CONTATTO[c.tipo] || c.tipo}</span>
+      <div class="contatto-corpo">
+        <div class="contatto-riga1"><span class="contatto-nome">${escapeHtml(c.nome)}</span><span class="contatto-data">${formatDataCorta(c.data)}</span></div>
+        ${c.recapito ? '<span class="contatto-recapito">' + escapeHtml(c.recapito) + '</span>' : ''}
+        <span class="contatto-motivo">${escapeHtml(c.motivo)}</span>
+      </div>
+      <button class="elimina" onclick="eliminaContatto('${c.id}')" title="Elimina">🗑</button>
+    `;
+    abilitaModifica(el.querySelector('.contatto-nome'), 'contatti', c.id, 'nome');
+    abilitaModifica(el.querySelector('.contatto-motivo'), 'contatti', c.id, 'motivo');
+    if (c.recapito) abilitaModifica(el.querySelector('.contatto-recapito'), 'contatti', c.id, 'recapito');
+    cont.appendChild(el);
+  });
+}
+
+// ============================================================
+// DIARIO
+// ============================================================
+window.aggiungiDiario = async function() {
+  const testo = document.getElementById('diario-input').value.trim();
+  const data = document.getElementById('diario-data-input').value;
+  if (!testo || !data) return;
+  document.getElementById('diario-input').value = '';
+  await addDoc(collection(db, 'diario'), { testo, data, creato: serverTimestamp() });
+};
+
+function renderDiario(snap) {
+  const cont = document.getElementById('diario-lista');
+  cont.innerHTML = '';
+  const docs = [];
+  snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+  docs.sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+  const gruppi = {}; const ordineGiorni = [];
+  docs.forEach(v => { if (!gruppi[v.data]) { gruppi[v.data] = []; ordineGiorni.push(v.data); } gruppi[v.data].push(v); });
+  ordineGiorni.forEach(data => {
+    const giornoDiv = document.createElement('div');
+    giornoDiv.className = 'diario-day';
+    const titolo = document.createElement('div');
+    titolo.className = 'giorno';
+    titolo.textContent = formatGiornoLungo(data);
+    giornoDiv.appendChild(titolo);
+    gruppi[data].forEach(v => {
+      const el = document.createElement('div');
+      el.className = 'diario-entry';
+      el.setAttribute('data-search', v.testo.toLowerCase());
+      el.innerHTML = `<span class="testo-diario">${escapeHtml(v.testo)}</span>`;
+      abilitaModifica(el.querySelector('.testo-diario'), 'diario', v.id, 'testo');
+      giornoDiv.appendChild(el);
+    });
+    cont.appendChild(giornoDiv);
+  });
+}
+
+// ============================================================
+// APPUNTI
+// ============================================================
+window.aggiungiAppunto = async function() {
+  const input = document.getElementById('appunto-input');
+  const testo = input.value.trim();
+  if (!testo) return;
+  input.value = '';
+  await addDoc(collection(db, 'appunti'), { testo, creato: serverTimestamp() });
+};
+window.eliminaAppunto = async function(id) {
+  if (!confirm('Eliminare definitivamente questo appunto?')) return;
+  await deleteDoc(doc(db, 'appunti', id));
+};
+
+function renderAppunti(snap) {
+  const cont = document.getElementById('appunti-lista');
+  cont.innerHTML = '';
+  const docs = [];
+  snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+  docs.sort((a, b) => {
+    const ta = a.creato && a.creato.toMillis ? a.creato.toMillis() : 0;
+    const tb = b.creato && b.creato.toMillis ? b.creato.toMillis() : 0;
+    return tb - ta;
+  });
+  docs.forEach(a => {
+    const dataStr = a.creato && a.creato.toDate ? formatGiornoLungo(a.creato.toDate().toISOString().split('T')[0]) : '';
+    const el = document.createElement('div');
+    el.className = 'appunto';
+    el.setAttribute('data-search', a.testo.toLowerCase());
+    el.innerHTML = `<div class="appunto-corpo"><div class="appunto-data">${dataStr}</div><p class="testo-appunto">${escapeHtml(a.testo)}</p></div><button class="elimina" onclick="eliminaAppunto('${a.id}')" title="Elimina">🗑</button>`;
+    abilitaModifica(el.querySelector('.testo-appunto'), 'appunti', a.id, 'testo');
+    cont.appendChild(el);
+  });
+}
+
+// ============================================================
+// DOCUMENTI
+// ============================================================
+window.aggiungiDocumento = async function() {
+  const tag = document.getElementById('documento-tag-input').value.trim();
+  const titolo = document.getElementById('documento-titolo-input').value.trim();
+  let url = document.getElementById('documento-url-input').value.trim();
+  if (!titolo || !url) return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  const categoria = document.getElementById('documento-categoria').value;
+  document.getElementById('documento-tag-input').value = '';
+  document.getElementById('documento-titolo-input').value = '';
+  document.getElementById('documento-url-input').value = '';
+  await addDoc(collection(db, 'documenti'), { tag, titolo, url, categoria, creato: serverTimestamp() });
+};
+window.eliminaDocumento = async function(id) {
+  if (!confirm('Eliminare questo documento?')) return;
+  await deleteDoc(doc(db, 'documenti', id));
+};
+window.filtraCategoriaDocumenti = function(cat) { filtroAttivoDocumenti = cat; renderFiltriDocumenti(ultimiDocsDocumenti); applicaFiltroDocumenti(); };
+function applicaFiltroDocumenti() {
+  document.querySelectorAll('#documenti-lista .link-row').forEach(el => {
+    const cat = el.getAttribute('data-categoria');
+    el.style.display = (!filtroAttivoDocumenti || cat === filtroAttivoDocumenti) ? '' : 'none';
+  });
+}
+function renderFiltriDocumenti(docs) {
+  const wrap = document.getElementById('filtri-documenti');
+  const cats = new Set(LISTE_CATEGORIE['documenti']);
+  docs.forEach(d => { if (d.categoria) cats.add(d.categoria); });
+  wrap.innerHTML = '';
+  const t = document.createElement('button');
+  t.className = 'filtro-chip' + (!filtroAttivoDocumenti ? ' attivo' : '');
+  t.textContent = 'Tutte'; t.onclick = () => filtraCategoriaDocumenti(null);
+  wrap.appendChild(t);
+  cats.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'filtro-chip' + (filtroAttivoDocumenti === cat ? ' attivo' : '');
+    b.textContent = cat; b.onclick = () => filtraCategoriaDocumenti(cat);
+    wrap.appendChild(b);
+  });
+  const gear = document.createElement('button');
+  gear.className = 'filtro-chip'; gear.title = 'Modifica o elimina categorie'; gear.textContent = '⚙';
+  gear.onclick = () => gestisciCategorie('documenti', 'documenti', 'categoria');
+  wrap.appendChild(gear);
+}
+
+function renderDocumenti(snap) {
+  const cont = document.getElementById('documenti-lista');
+  cont.innerHTML = '';
+  const docs = [];
+  snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+  ultimiDocsDocumenti = docs;
+  renderFiltriDocumenti(docs);
+  docs.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'link-row';
+    el.setAttribute('data-search', ((d.tag||'') + ' ' + d.titolo).toLowerCase());
+    el.setAttribute('data-categoria', d.categoria || 'Altro');
+    el.innerHTML = `
+      ${d.tag ? '<span class="tag-nota-inline tag-testo">' + escapeHtml(d.tag) + '</span>' : '<span class="tag-nota-inline tag-testo" style="opacity:0.5;">+ titolino</span>'}
+      <div class="titolo titolo-doc">${escapeHtml(d.titolo)}</div>
+      <span class="badge-categoria badge-cat-cliccabile" title="Clicca per cambiare categoria">${escapeHtml(d.categoria || 'Altro')}</span>
+      <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Apri ↗</a>
+      <button class="elimina" onclick="eliminaDocumento('${d.id}')" title="Elimina">🗑</button>
+    `;
+    abilitaModifica(el.querySelector('.titolo-doc'), 'documenti', d.id, 'titolo');
+    abilitaModifica(el.querySelector('.tag-testo'), 'documenti', d.id, 'tag');
+    el.querySelector('.badge-cat-cliccabile').onclick = function() { cambiaCategoriaVoce(d.id, d.categoria || 'Altro', 'documenti', 'documenti', 'categoria', this); };
+    cont.appendChild(el);
+  });
+  applicaFiltroDocumenti();
+}
+
+// ============================================================
+// SPESE
+// ============================================================
+let meseVisualizzato = new Date().getMonth();
+let annoVisualizzato = new Date().getFullYear();
+
+window.cambiaMese = function(delta) {
+  meseVisualizzato += delta;
+  if (meseVisualizzato < 0) { meseVisualizzato = 11; annoVisualizzato--; }
+  if (meseVisualizzato > 11) { meseVisualizzato = 0; annoVisualizzato++; }
+  aggiornaEtichettaMese();
+  renderSpese(ultimoSnapSpese);
+};
+function aggiornaEtichettaMese() {
+  document.getElementById('mese-corrente-label').textContent = MESI_LUNGHI[meseVisualizzato].charAt(0).toUpperCase() + MESI_LUNGHI[meseVisualizzato].slice(1) + ' ' + annoVisualizzato;
+  document.getElementById('riepilogo-anno-titolo').textContent = 'Riepilogo per categoria — anno ' + annoVisualizzato;
+}
+aggiornaEtichettaMese();
+
+window.filtraCategoriaSpese = function(cat) { filtroAttivoSpese = cat; renderFiltriSpese(ultimiDocsSpese); applicaFiltroSpese(); };
+function applicaFiltroSpese() {
+  document.querySelectorAll('#spese-lista .spesa').forEach(el => {
+    const cat = el.getAttribute('data-categoria');
+    el.style.display = (!filtroAttivoSpese || cat === filtroAttivoSpese) ? '' : 'none';
+  });
+}
+function renderFiltriSpese(docsDelMese) {
+  const wrap = document.getElementById('filtri-spese');
+  const cats = new Set(LISTE_CATEGORIE['spese-categoria']);
+  docsDelMese.forEach(d => { if (d.categoria) cats.add(d.categoria); });
+  wrap.innerHTML = '';
+  const t = document.createElement('button');
+  t.className = 'filtro-chip' + (!filtroAttivoSpese ? ' attivo' : '');
+  t.textContent = 'Tutte'; t.onclick = () => filtraCategoriaSpese(null);
+  wrap.appendChild(t);
+  cats.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'filtro-chip' + (filtroAttivoSpese === cat ? ' attivo' : '');
+    b.textContent = cat; b.onclick = () => filtraCategoriaSpese(cat);
+    wrap.appendChild(b);
+  });
+  const gear = document.createElement('button');
+  gear.className = 'filtro-chip'; gear.title = 'Modifica o elimina categorie'; gear.textContent = '⚙';
+  gear.onclick = () => gestisciCategorie('spese-categoria', 'spese', 'categoria');
+  wrap.appendChild(gear);
+}
+
+window.aggiungiSpesa = async function() {
+  const motivo = document.getElementById('spesa-motivo-input').value.trim();
+  const data = document.getElementById('spesa-data-input').value;
+  const importoVal = parseFloat(document.getElementById('spesa-importo-input').value);
+  if (!motivo || !data || isNaN(importoVal)) return;
+  const categoria = document.getElementById('spesa-categoria').value;
+  const metodo = document.getElementById('spesa-metodo').value;
+  await addDoc(collection(db, 'spese'), { motivo, data, importo: importoVal, categoria, metodo, creato: serverTimestamp() });
+  document.getElementById('spesa-motivo-input').value = '';
+  document.getElementById('spesa-importo-input').value = '';
+};
+window.eliminaSpesa = async function(id) {
+  if (!confirm('Eliminare questa spesa?')) return;
+  await deleteDoc(doc(db, 'spese', id));
+};
+window.cambiaDataSpesa = function(id, dataAttuale, dataEl) {
+  const input = document.createElement('input');
+  input.type = 'date'; input.value = dataAttuale; input.className = 'data-input-inline';
+  input.onchange = async () => { await updateDoc(doc(db, 'spese', id), { data: input.value }); };
+  input.onblur = () => { if (input.parentNode) input.parentNode.replaceChild(dataEl, input); };
+  dataEl.parentNode.replaceChild(input, dataEl);
+  input.focus();
+};
+
+function formattaEuro(v) { return '€ ' + v.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+let ultimoSnapSpese = null;
+function renderSpese(snap) {
+  if (snap) ultimoSnapSpese = snap;
+  if (!ultimoSnapSpese) return;
+  const tutti = [];
+  ultimoSnapSpese.forEach(d => tutti.push({ id: d.id, ...d.data() }));
+
+  const delMese = tutti.filter(s => {
+    const d = new Date(s.data + 'T00:00:00');
+    return d.getMonth() === meseVisualizzato && d.getFullYear() === annoVisualizzato;
+  });
+  delMese.sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+  ultimiDocsSpese = delMese;
+  renderFiltriSpese(delMese);
+
+  const cont = document.getElementById('spese-lista');
+  cont.innerHTML = '';
+  delMese.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'spesa';
+    el.setAttribute('data-search', s.motivo.toLowerCase());
+    el.setAttribute('data-categoria', s.categoria || 'Altro');
+    el.innerHTML = `
+      <div class="spesa-data data-cliccabile" title="Clicca per cambiare la data">${formatDataCorta(s.data)}</div>
+      <span class="spesa-descrizione descrizione-testo">${escapeHtml(s.motivo)}</span>
+      <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
+      <span class="badge-categoria badge-cat-cliccabile" title="Categoria">${escapeHtml(s.categoria || 'Altro')}</span>
+      <span class="badge-metodo badge-metodo-cliccabile" title="Metodo di pagamento">${escapeHtml(s.metodo || 'Altro')}</span>
+      <button class="elimina" onclick="eliminaSpesa('${s.id}')" title="Elimina">🗑</button>
+    `;
+    abilitaModifica(el.querySelector('.descrizione-testo'), 'spese', s.id, 'motivo');
+    el.querySelector('.data-cliccabile').onclick = function() { cambiaDataSpesa(s.id, s.data, this); };
+    el.querySelector('.badge-cat-cliccabile').onclick = function() { cambiaCategoriaVoce(s.id, s.categoria || 'Altro', 'spese-categoria', 'spese', 'categoria', this); };
+    el.querySelector('.badge-metodo-cliccabile').onclick = function() { cambiaCategoriaVoce(s.id, s.metodo || 'Altro', 'spese-metodo', 'spese', 'metodo', this); };
+    const importoEl = el.querySelector('.importo-testo');
+    importoEl.setAttribute('contenteditable', 'true');
+    importoEl.addEventListener('blur', async () => {
+      const nuovo = parseFloat(importoEl.textContent.replace('€', '').replace(',', '.').trim());
+      if (!isNaN(nuovo)) { await updateDoc(doc(db, 'spese', s.id), { importo: nuovo }); }
+      else { importoEl.textContent = formattaEuro(s.importo); }
+    });
+    cont.appendChild(el);
+  });
+  applicaFiltroSpese();
+
+  const totaleMese = delMese.reduce((acc, s) => acc + (s.importo || 0), 0);
+  document.getElementById('totale-mese-label').textContent = formattaEuro(totaleMese);
+
+  const delAnno = tutti.filter(s => new Date(s.data + 'T00:00:00').getFullYear() === annoVisualizzato);
+  renderRiepilogoCategorie('riepilogo-mese', delMese);
+  renderRiepilogoCategorie('riepilogo-anno', delAnno);
+}
+
+function renderRiepilogoCategorie(contId, elenco) {
+  const cont = document.getElementById(contId);
+  cont.innerHTML = '';
+  const totali = {};
+  let totaleComplessivo = 0;
+  elenco.forEach(s => {
+    const cat = s.categoria || 'Altro';
+    totali[cat] = (totali[cat] || 0) + (s.importo || 0);
+    totaleComplessivo += (s.importo || 0);
+  });
+  const categorieOrdinate = Object.keys(totali).sort((a, b) => totali[b] - totali[a]);
+  if (categorieOrdinate.length === 0) {
+    cont.innerHTML = '<div style="font-size:0.8rem; color:var(--ink-soft); font-style:italic;">Nessuna spesa</div>';
+    return;
+  }
+  categorieOrdinate.forEach(cat => {
+    const perc = totaleComplessivo > 0 ? Math.round((totali[cat] / totaleComplessivo) * 100) : 0;
+    const riga = document.createElement('div');
+    riga.className = 'riepilogo-cat-riga';
+    riga.innerHTML = `<span class="riepilogo-cat-nome">${escapeHtml(cat)}</span><span class="riepilogo-cat-barra"><span style="width:${perc}%;"></span></span><span class="riepilogo-cat-val">${formattaEuro(totali[cat])}</span>`;
+    cont.appendChild(riga);
+  });
+}
+
+// ============================================================
+// STAMPA / DOWNLOAD
+// ============================================================
+window.stampaVista = function() { window.print(); };
+window.scaricaVista = function() {
+  const panelAttivo = document.querySelector('section.panel.active');
+  const nomeTab = document.querySelector('nav.tabs button.active').textContent.trim();
+  let testo = 'AGENDA PERSONALE — ' + nomeTab + '\n';
+  testo += 'Esportato il ' + new Date().toLocaleDateString('it-IT') + '\n';
+  testo += '='.repeat(40) + '\n\n';
+  const elementi = panelAttivo.querySelectorAll('[data-search]');
+  let trovati = false;
+  elementi.forEach(el => {
+    const visibile = el.offsetParent !== null && getComputedStyle(el).display !== 'none';
+    if (visibile) { trovati = true; testo += '- ' + el.textContent.replace(/\s+/g, ' ').trim() + '\n'; }
+  });
+  if (!trovati) testo += '(nessun elemento visibile da esportare)\n';
+  const blob = new Blob([testo], { type: 'text/plain;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'agenda-personale-' + nomeTab.toLowerCase().replace(/\s+/g, '-') + '.txt';
+  link.click();
+  URL.revokeObjectURL(link.href);
+};
+
+// ============================================================
+// ASCOLTO IN TEMPO REALE
+// ============================================================
+let ascoltoAvviato = false;
+let intervalloAllarmi = null;
+function avviaAscoltoDati() {
+  if (ascoltoAvviato) return;
+  ascoltoAvviato = true;
+  onSnapshot(collection(db, 'todos'), snap => { renderTodos(snap); aggiornaRicerca(); });
+  onSnapshot(collection(db, 'scadenze'), snap => { renderScadenze(snap); aggiornaRicerca(); });
+  onSnapshot(collection(db, 'appuntamenti'), snap => { renderAppuntamenti(snap); aggiornaRicerca(); });
+  onSnapshot(collection(db, 'contatti'), snap => { renderContatti(snap); aggiornaRicerca(); });
+  onSnapshot(collection(db, 'diario'), snap => { renderDiario(snap); aggiornaRicerca(); });
+  onSnapshot(collection(db, 'appunti'), snap => { renderAppunti(snap); aggiornaRicerca(); });
+  onSnapshot(collection(db, 'documenti'), snap => { renderDocumenti(snap); aggiornaRicerca(); });
+  onSnapshot(collection(db, 'spese'), snap => { renderSpese(snap); aggiornaRicerca(); });
+  document.getElementById('stato-connessione').textContent = 'Collegata a Firebase';
+  intervalloAllarmi = setInterval(() => { renderAppuntamenti; }, 60000);
+}
+function aggiornaRicerca() {
+  const val = document.getElementById('ricerca').value;
+  if (val.trim() !== '') cerca(val);
+}
+
+// ============================================================
+// NAVIGAZIONE TAB + RICERCA GLOBALE
+// ============================================================
+window.pulisciRicerca = function() {
+  const campo = document.getElementById('ricerca');
+  campo.value = '';
+  cerca('');
+  campo.focus();
+};
+
+window.mostra = function(id, btn) {
+  document.getElementById('ricerca').value = '';
+  cerca('');
+  document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); p.style.minHeight = ''; });
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+};
+
+window.cerca = function(testo) {
+  const q = testo.trim().toLowerCase();
+  const hint = document.getElementById('search-hint');
+  const panels = document.querySelectorAll('.panel');
+  const tabs = document.querySelectorAll('nav.tabs button');
+
+  if (q === '') {
+    hint.style.display = 'none';
+    document.querySelectorAll('[data-search]').forEach(el => el.style.display = '');
+    tabs.forEach(t => t.disabled = false);
+    panels.forEach(p => { p.classList.remove('active'); p.style.minHeight = ''; });
+    const attivaPrima = document.querySelector('nav.tabs button.active') || document.querySelector('nav.tabs button');
+    attivaPrima.click();
+    applicaFiltroScadenze();
+    applicaFiltroDocumenti();
+    applicaFiltroSpese();
+    return;
+  }
+
+  tabs.forEach(t => { t.classList.remove('active'); t.disabled = true; });
+  let trovatiTotali = 0;
+  panels.forEach(panel => {
+    const items = panel.querySelectorAll('[data-search]');
+    let trovatiInPanel = 0;
+    items.forEach(el => {
+      const match = (el.getAttribute('data-search') || '').includes(q);
+      el.style.display = match ? '' : 'none';
+      if (match) trovatiInPanel++;
+    });
+    trovatiTotali += trovatiInPanel;
+    if (trovatiInPanel > 0) { panel.classList.add('active'); panel.style.minHeight = '0'; }
+    else { panel.classList.remove('active'); panel.style.minHeight = ''; }
+  });
+
+  hint.style.display = 'block';
+  hint.textContent = trovatiTotali === 0 ? `Nessun risultato per "${testo}"` : `${trovatiTotali} risultat${trovatiTotali === 1 ? 'o' : 'i'} per "${testo}" in tutte le sezioni`;
+};
+</script>
+
+</body>
+</html>
