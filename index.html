@@ -617,13 +617,20 @@ window.gestisciNuovaCategoria = async function(select, tipo) {
     const nome = prompt('Nome della nuova voce:');
     if (nome && nome.trim() !== '') {
       const nomeFinale = nome.trim();
-      const refDoc = doc(db, 'categorie', tipo);
       const listaAttuale = LISTE_CATEGORIE[tipo];
       if (!listaAttuale.includes(nomeFinale)) {
-        const nuovaLista = [...listaAttuale.filter(c => c !== 'Altro'), nomeFinale, 'Altro'];
-        await setDoc(refDoc, { lista: nuovaLista });
+        // Inserisce subito l'opzione nel menu, senza aspettare la conferma di Firebase
+        const nuovaOpz = document.createElement('option');
+        nuovaOpz.value = nomeFinale;
+        nuovaOpz.textContent = nomeFinale;
+        const opzioneAggiungi = select.querySelector('option[value="__nuova__"]');
+        select.insertBefore(nuovaOpz, opzioneAggiungi);
       }
       select.value = nomeFinale;
+      // Salva su Firebase in background (aggiorna anche gli altri dispositivi)
+      const refDoc = doc(db, 'categorie', tipo);
+      const nuovaLista = [...listaAttuale.filter(c => c !== 'Altro' && c !== nomeFinale), nomeFinale, 'Altro'];
+      await setDoc(refDoc, { lista: nuovaLista });
     } else { select.value = 'Altro'; }
   }
 };
