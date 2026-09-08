@@ -242,6 +242,20 @@
   .spesa-descrizione { flex: 1; min-width: 140px; }
   .spesa-importo { font-weight: 700; font-size: 0.88rem; color: var(--ink); flex-shrink: 0; width: 72px; text-align: right; }
   .spesa-scontrino { flex-shrink: 0; text-decoration: none; font-size: 0.9rem; }
+  .btn-carica-file {
+    padding: 9px 12px;
+    border: 1.5px solid var(--forest-dark);
+    border-radius: 3px;
+    background: var(--surface);
+    color: var(--forest-dark);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .btn-carica-file:hover { background: var(--forest); color: #fff; }
+  .btn-carica-file.file-scelto { background: var(--forest); color: #fff; }
   .spesa .badge-categoria, .spesa .badge-metodo { width: 76px; text-align: center; overflow: hidden; text-overflow: ellipsis; }
   .badge-metodo {
     display: inline-block; font-size: 0.68rem; font-weight: 700; color: var(--ink-soft); background: var(--paper);
@@ -446,9 +460,13 @@
         <select id="spesa-categoria" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-categoria')"></select>
         <select id="spesa-metodo" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-metodo')"></select>
         <input type="text" id="spesa-scontrino-input" placeholder="Link scontrino (opzionale)…" style="flex:1;">
-        <button onclick="aggiungiSpesa()">Aggiungi</button>
+        <label class="btn-carica-file" id="label-carica-scontrino">
+          📎 Carica foto
+          <input type="file" id="spesa-scontrino-file" accept="image/*" style="display:none;" onchange="anteprimaFileScontrino(this)">
+        </label>
+        <button id="btn-aggiungi-spesa" onclick="aggiungiSpesa()">Aggiungi</button>
       </div>
-      <div class="search-hint" style="display:block; margin-top:6px;">Foto scontrino: incolla il link a una foto già caricata su Drive/Google Foto — caricamento diretto dall'app valutabile in futuro.</div>
+      <div class="search-hint" id="spesa-file-hint" style="display:block; margin-top:6px;">Puoi incollare un link (es. Drive/Foto) oppure caricare direttamente una foto/PDF dello scontrino — anche entrambi insieme se vuoi.</div>
 
       <h3 class="sottotitolo" style="margin-top:22px;">Riepilogo per categoria — questo mese</h3>
       <div class="riepilogo-categorie" id="riepilogo-mese"></div>
@@ -1196,6 +1214,41 @@ function renderFiltriSpese(docsDelMese) {
   wrap.appendChild(gear);
 }
 
+window.anteprimaFileScontrino = function(input) {
+  const label = document.getElementById('label-carica-scontrino');
+  const hint = document.getElementById('spesa-file-hint');
+  if (input.files && input.files[0]) {
+    label.classList.add('file-scelto');
+    label.childNodes[0].textContent = '📎 ' + input.files[0].name;
+    hint.textContent = 'File pronto: si carica su Firebase quando clicchi "Aggiungi".';
+  } else {
+    label.classList.remove('file-scelto');
+    label.childNodes[0].textContent = '📎 Carica foto';
+    hint.textContent = 'Puoi incollare un link (es. Drive/Foto) oppure caricare direttamente una foto dello scontrino — anche entrambi insieme se vuoi. La foto viene compressa e salvata nel database.';
+  }
+};
+
+function comprimiImmagine(file, maxLarghezza, qualita) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxLarghezza) { h = Math.round(h * maxLarghezza / w); w = maxLarghezza; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', qualita));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 window.aggiungiSpesa = async function() {
   const motivo = document.getElementById('spesa-motivo-input').value.trim();
   const data = document.getElementById('spesa-data-input').value;
@@ -1205,10 +1258,37 @@ window.aggiungiSpesa = async function() {
   const metodo = document.getElementById('spesa-metodo').value;
   let scontrinoUrl = document.getElementById('spesa-scontrino-input').value.trim();
   if (scontrinoUrl && !/^https?:\/\//i.test(scontrinoUrl)) scontrinoUrl = 'https://' + scontrinoUrl;
-  await addDoc(collection(db, 'spese'), { motivo, data, importo: importoVal, categoria, metodo, scontrinoUrl: scontrinoUrl || null, creato: serverTimestamp() });
+
+  const fileInput = document.getElementById('spesa-scontrino-file');
+  let scontrinoFoto = null;
+  const btnAggiungi = document.getElementById('btn-aggiungi-spesa');
+  if (fileInput.files && fileInput.files[0]) {
+    btnAggiungi.disabled = true;
+    btnAggiungi.textContent = 'Comprimo…';
+    try {
+      scontrinoFoto = await comprimiImmagine(fileInput.files[0], 900, 0.6);
+      if (scontrinoFoto.length > 900000) {
+        // Ancora troppo pesante: ricomprimo più aggressivamente
+        scontrinoFoto = await comprimiImmagine(fileInput.files[0], 600, 0.45);
+      }
+      if (scontrinoFoto.length > 900000) {
+        alert('La foto resta troppo pesante anche dopo la compressione — provane una più semplice, oppure usa il link.');
+        scontrinoFoto = null;
+      }
+    } catch (e) {
+      alert('Non sono riuscita a elaborare la foto. La spesa viene comunque salvata senza.');
+      scontrinoFoto = null;
+    }
+    btnAggiungi.disabled = false;
+    btnAggiungi.textContent = 'Aggiungi';
+  }
+
+  await addDoc(collection(db, 'spese'), { motivo, data, importo: importoVal, categoria, metodo, scontrinoUrl: scontrinoUrl || null, scontrinoFoto, creato: serverTimestamp() });
   document.getElementById('spesa-motivo-input').value = '';
   document.getElementById('spesa-importo-input').value = '';
   document.getElementById('spesa-scontrino-input').value = '';
+  fileInput.value = '';
+  anteprimaFileScontrino(fileInput);
 };
 window.eliminaSpesa = async function(id) {
   if (!confirm('Eliminare questa spesa?')) return;
@@ -1250,7 +1330,8 @@ function renderSpese(snap) {
     el.innerHTML = `
       <div class="spesa-data data-cliccabile" title="Clicca per cambiare la data">${formatDataCorta(s.data)}</div>
       <span class="spesa-descrizione descrizione-testo">${escapeHtml(s.motivo)}</span>
-      ${s.scontrinoUrl ? '<a href="' + escapeHtml(s.scontrinoUrl) + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri scontrino">📎</a>' : ''}
+      ${s.scontrinoUrl ? '<a href="' + escapeHtml(s.scontrinoUrl) + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri link scontrino">📎</a>' : ''}
+      ${s.scontrinoFoto ? '<a href="' + s.scontrinoFoto + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri foto scontrino">🖼️</a>' : ''}
       <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
       <span class="badge-categoria badge-cat-cliccabile" title="Categoria">${escapeHtml(s.categoria || 'Altro')}</span>
       <span class="badge-metodo badge-metodo-cliccabile" title="Metodo di pagamento">${escapeHtml(s.metodo || 'Altro')}</span>
