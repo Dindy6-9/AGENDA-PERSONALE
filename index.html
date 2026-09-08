@@ -241,7 +241,7 @@
   .spesa-data { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.74rem; color: var(--forest-dark); width: 40px; flex-shrink: 0; cursor: pointer; }
   .spesa-descrizione { flex: 1; min-width: 140px; }
   .spesa-importo { font-weight: 700; font-size: 0.88rem; color: var(--ink); flex-shrink: 0; width: 72px; text-align: right; }
-  .spesa-scontrino { flex-shrink: 0; text-decoration: none; font-size: 0.9rem; }
+  .spesa-scontrino { flex-shrink: 0; text-decoration: none; font-size: 0.9rem; border: none; background: none; cursor: pointer; padding: 0; }
   .btn-carica-file {
     padding: 9px 12px;
     border: 1.5px solid var(--forest-dark);
@@ -282,6 +282,31 @@
   }
 
   footer.note { padding: 10px 28px; font-size: 0.72rem; color: var(--ink-soft); border-top: 1px solid var(--border); background: var(--paper); }
+  .modal-foto-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(20, 15, 25, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+    cursor: pointer;
+  }
+  .modal-foto-overlay img {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 4px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  .modal-foto-chiudi {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    color: #fff;
+    font-size: 1.6rem;
+    cursor: pointer;
+  }
 
   @media print {
     body { background: #fff; padding: 0; display: block; }
@@ -481,6 +506,11 @@
     </section>
 
     <footer class="note">Agenda Personale · v1.0 · dati salvati su Firebase in tempo reale</footer>
+  </div>
+
+  <div id="modal-foto" class="modal-foto-overlay" style="display:none;" onclick="chiudiModalFoto()">
+    <span class="modal-foto-chiudi">✕</span>
+    <img id="modal-foto-img" src="" alt="Foto scontrino">
   </div>
 
 <script type="module">
@@ -1228,6 +1258,15 @@ window.anteprimaFileScontrino = function(input) {
   }
 };
 
+window.apriModalFoto = function(dataUrl) {
+  document.getElementById('modal-foto-img').src = dataUrl;
+  document.getElementById('modal-foto').style.display = 'flex';
+};
+window.chiudiModalFoto = function() {
+  document.getElementById('modal-foto').style.display = 'none';
+  document.getElementById('modal-foto-img').src = '';
+};
+
 function comprimiImmagine(file, maxLarghezza, qualita) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1331,7 +1370,7 @@ function renderSpese(snap) {
       <div class="spesa-data data-cliccabile" title="Clicca per cambiare la data">${formatDataCorta(s.data)}</div>
       <span class="spesa-descrizione descrizione-testo">${escapeHtml(s.motivo)}</span>
       ${s.scontrinoUrl ? '<a href="' + escapeHtml(s.scontrinoUrl) + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri link scontrino">📎</a>' : ''}
-      ${s.scontrinoFoto ? '<a href="' + s.scontrinoFoto + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri foto scontrino">🖼️</a>' : ''}
+      ${s.scontrinoFoto ? '<button type="button" class="spesa-scontrino btn-vedi-foto" title="Apri foto scontrino">🖼️</button>' : ''}
       <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
       <span class="badge-categoria badge-cat-cliccabile" title="Categoria">${escapeHtml(s.categoria || 'Altro')}</span>
       <span class="badge-metodo badge-metodo-cliccabile" title="Metodo di pagamento">${escapeHtml(s.metodo || 'Altro')}</span>
@@ -1341,6 +1380,8 @@ function renderSpese(snap) {
     el.querySelector('.data-cliccabile').onclick = function() { cambiaDataSpesa(s.id, s.data, this); };
     el.querySelector('.badge-cat-cliccabile').onclick = function() { cambiaCategoriaVoce(s.id, s.categoria || 'Altro', 'spese-categoria', 'spese', 'categoria', this); };
     el.querySelector('.badge-metodo-cliccabile').onclick = function() { cambiaCategoriaVoce(s.id, s.metodo || 'Altro', 'spese-metodo', 'spese', 'metodo', this); };
+    const btnFoto = el.querySelector('.btn-vedi-foto');
+    if (btnFoto) btnFoto.onclick = () => apriModalFoto(s.scontrinoFoto);
     const importoEl = el.querySelector('.importo-testo');
     importoEl.setAttribute('contenteditable', 'true');
     importoEl.addEventListener('blur', async () => {
