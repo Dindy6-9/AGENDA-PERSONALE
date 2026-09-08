@@ -241,6 +241,7 @@
   .spesa-data { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.74rem; color: var(--forest-dark); width: 40px; flex-shrink: 0; cursor: pointer; }
   .spesa-descrizione { flex: 1; min-width: 140px; }
   .spesa-importo { font-weight: 700; font-size: 0.88rem; color: var(--ink); flex-shrink: 0; width: 72px; text-align: right; }
+  .spesa-scontrino { flex-shrink: 0; text-decoration: none; font-size: 0.9rem; }
   .spesa .badge-categoria, .spesa .badge-metodo { width: 76px; text-align: center; overflow: hidden; text-overflow: ellipsis; }
   .badge-metodo {
     display: inline-block; font-size: 0.68rem; font-weight: 700; color: var(--ink-soft); background: var(--paper);
@@ -444,9 +445,10 @@
         <input type="number" step="0.01" id="spesa-importo-input" placeholder="Importo €" class="spesa-importo-input" style="flex:0 0 100px;">
         <select id="spesa-categoria" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-categoria')"></select>
         <select id="spesa-metodo" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-metodo')"></select>
+        <input type="text" id="spesa-scontrino-input" placeholder="Link scontrino (opzionale)…" style="flex:1;">
         <button onclick="aggiungiSpesa()">Aggiungi</button>
       </div>
-      <div class="search-hint" style="display:block; margin-top:6px;">Foto scontrino: per ora un campo link (es. a una foto su Drive/Foto) nella descrizione — caricamento diretto valutabile in futuro.</div>
+      <div class="search-hint" style="display:block; margin-top:6px;">Foto scontrino: incolla il link a una foto già caricata su Drive/Google Foto — caricamento diretto dall'app valutabile in futuro.</div>
 
       <h3 class="sottotitolo" style="margin-top:22px;">Riepilogo per categoria — questo mese</h3>
       <div class="riepilogo-categorie" id="riepilogo-mese"></div>
@@ -1201,9 +1203,12 @@ window.aggiungiSpesa = async function() {
   if (!motivo || !data || isNaN(importoVal)) return;
   const categoria = document.getElementById('spesa-categoria').value;
   const metodo = document.getElementById('spesa-metodo').value;
-  await addDoc(collection(db, 'spese'), { motivo, data, importo: importoVal, categoria, metodo, creato: serverTimestamp() });
+  let scontrinoUrl = document.getElementById('spesa-scontrino-input').value.trim();
+  if (scontrinoUrl && !/^https?:\/\//i.test(scontrinoUrl)) scontrinoUrl = 'https://' + scontrinoUrl;
+  await addDoc(collection(db, 'spese'), { motivo, data, importo: importoVal, categoria, metodo, scontrinoUrl: scontrinoUrl || null, creato: serverTimestamp() });
   document.getElementById('spesa-motivo-input').value = '';
   document.getElementById('spesa-importo-input').value = '';
+  document.getElementById('spesa-scontrino-input').value = '';
 };
 window.eliminaSpesa = async function(id) {
   if (!confirm('Eliminare questa spesa?')) return;
@@ -1245,6 +1250,7 @@ function renderSpese(snap) {
     el.innerHTML = `
       <div class="spesa-data data-cliccabile" title="Clicca per cambiare la data">${formatDataCorta(s.data)}</div>
       <span class="spesa-descrizione descrizione-testo">${escapeHtml(s.motivo)}</span>
+      ${s.scontrinoUrl ? '<a href="' + escapeHtml(s.scontrinoUrl) + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri scontrino">📎</a>' : ''}
       <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
       <span class="badge-categoria badge-cat-cliccabile" title="Categoria">${escapeHtml(s.categoria || 'Altro')}</span>
       <span class="badge-metodo badge-metodo-cliccabile" title="Metodo di pagamento">${escapeHtml(s.metodo || 'Altro')}</span>
