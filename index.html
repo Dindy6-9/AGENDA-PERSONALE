@@ -485,8 +485,12 @@
         <select id="spesa-categoria" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-categoria')"></select>
         <select id="spesa-metodo" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-metodo')"></select>
         <input type="text" id="spesa-scontrino-input" placeholder="Link scontrino (opzionale)…" style="flex:1;">
+        <label class="btn-carica-file" id="label-scatta-scontrino">
+          📷 Scatta
+          <input type="file" id="spesa-scontrino-camera" accept="image/*" capture="environment" style="display:none;" onchange="anteprimaFileScontrino(this)">
+        </label>
         <label class="btn-carica-file" id="label-carica-scontrino">
-          📎 Carica foto
+          🖼️ Scegli file
           <input type="file" id="spesa-scontrino-file" accept="image/*" style="display:none;" onchange="anteprimaFileScontrino(this)">
         </label>
         <button id="btn-aggiungi-spesa" onclick="aggiungiSpesa()">Aggiungi</button>
@@ -1245,16 +1249,24 @@ function renderFiltriSpese(docsDelMese) {
 }
 
 window.anteprimaFileScontrino = function(input) {
-  const label = document.getElementById('label-carica-scontrino');
+  const isCamera = input.id === 'spesa-scontrino-camera';
+  const labelMio = document.getElementById(isCamera ? 'label-scatta-scontrino' : 'label-carica-scontrino');
+  const labelAltro = document.getElementById(isCamera ? 'label-carica-scontrino' : 'label-scatta-scontrino');
+  const inputAltro = document.getElementById(isCamera ? 'spesa-scontrino-file' : 'spesa-scontrino-camera');
   const hint = document.getElementById('spesa-file-hint');
+  const testoBase = isCamera ? '📷 Scatta' : '🖼️ Scegli file';
+
   if (input.files && input.files[0]) {
-    label.classList.add('file-scelto');
-    label.childNodes[0].textContent = '📎 ' + input.files[0].name;
-    hint.textContent = 'File pronto: si carica su Firebase quando clicchi "Aggiungi".';
+    inputAltro.value = '';
+    labelAltro.classList.remove('file-scelto');
+    labelAltro.childNodes[0].textContent = isCamera ? '🖼️ Scegli file' : '📷 Scatta';
+    labelMio.classList.add('file-scelto');
+    labelMio.childNodes[0].textContent = '✓ ' + input.files[0].name;
+    hint.textContent = 'File pronto: si comprime e si salva quando clicchi "Aggiungi".';
   } else {
-    label.classList.remove('file-scelto');
-    label.childNodes[0].textContent = '📎 Carica foto';
-    hint.textContent = 'Puoi incollare un link (es. Drive/Foto) oppure caricare direttamente una foto dello scontrino — anche entrambi insieme se vuoi. La foto viene compressa e salvata nel database.';
+    labelMio.classList.remove('file-scelto');
+    labelMio.childNodes[0].textContent = testoBase;
+    hint.textContent = 'Puoi incollare un link (es. Drive/Foto) oppure scattare/scegliere direttamente una foto dello scontrino.';
   }
 };
 
@@ -1298,17 +1310,19 @@ window.aggiungiSpesa = async function() {
   let scontrinoUrl = document.getElementById('spesa-scontrino-input').value.trim();
   if (scontrinoUrl && !/^https?:\/\//i.test(scontrinoUrl)) scontrinoUrl = 'https://' + scontrinoUrl;
 
-  const fileInput = document.getElementById('spesa-scontrino-file');
+  const inputGalleria = document.getElementById('spesa-scontrino-file');
+  const inputCamera = document.getElementById('spesa-scontrino-camera');
+  const fileScelto = (inputGalleria.files && inputGalleria.files[0]) ? inputGalleria.files[0] : ((inputCamera.files && inputCamera.files[0]) ? inputCamera.files[0] : null);
   let scontrinoFoto = null;
   const btnAggiungi = document.getElementById('btn-aggiungi-spesa');
-  if (fileInput.files && fileInput.files[0]) {
+  if (fileScelto) {
     btnAggiungi.disabled = true;
     btnAggiungi.textContent = 'Comprimo…';
     try {
-      scontrinoFoto = await comprimiImmagine(fileInput.files[0], 900, 0.6);
+      scontrinoFoto = await comprimiImmagine(fileScelto, 900, 0.6);
       if (scontrinoFoto.length > 900000) {
         // Ancora troppo pesante: ricomprimo più aggressivamente
-        scontrinoFoto = await comprimiImmagine(fileInput.files[0], 600, 0.45);
+        scontrinoFoto = await comprimiImmagine(fileScelto, 600, 0.45);
       }
       if (scontrinoFoto.length > 900000) {
         alert('La foto resta troppo pesante anche dopo la compressione — provane una più semplice, oppure usa il link.');
@@ -1326,8 +1340,9 @@ window.aggiungiSpesa = async function() {
   document.getElementById('spesa-motivo-input').value = '';
   document.getElementById('spesa-importo-input').value = '';
   document.getElementById('spesa-scontrino-input').value = '';
-  fileInput.value = '';
-  anteprimaFileScontrino(fileInput);
+  inputGalleria.value = '';
+  inputCamera.value = '';
+  anteprimaFileScontrino(inputGalleria);
 };
 window.eliminaSpesa = async function(id) {
   if (!confirm('Eliminare questa spesa?')) return;
