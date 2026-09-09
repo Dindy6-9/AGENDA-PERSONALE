@@ -458,11 +458,15 @@
       <div class="add-row documento-add-row">
         <input type="text" id="documento-tag-input" placeholder="Titolino (es. Polizza auto)…" class="tag-input">
         <input type="text" id="documento-titolo-input" placeholder="Descrizione…" style="flex:1;">
-        <input type="text" id="documento-url-input" placeholder="Link…" style="flex:1;">
+        <input type="text" id="documento-url-input" placeholder="Link (opzionale se carichi un file)…" style="flex:1;">
         <select id="documento-categoria" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'documenti')"></select>
-        <button onclick="aggiungiDocumento()">Aggiungi</button>
+        <label class="btn-carica-file" id="label-carica-documento">
+          📎 Carica file
+          <input type="file" id="documento-file" style="display:none;" onchange="anteprimaFileDocumento(this)">
+        </label>
+        <button id="btn-aggiungi-documento" onclick="aggiungiDocumento()">Aggiungi</button>
       </div>
-      <div class="search-hint" style="display:block; margin-top:6px;">Per ora solo link (es. a Google Drive/Foto) — caricamento diretto valutabile in futuro.</div>
+      <div class="search-hint" id="documento-file-hint" style="display:block; margin-top:6px;">Puoi incollare un link, oppure caricare un file (foto, PDF, Word…) — verrà salvato in una cartella dedicata del tuo Google Drive.</div>
     </section>
 
     <section class="panel" id="spese">
@@ -1130,16 +1134,77 @@ function renderAppunti(snap) {
 // ============================================================
 // DOCUMENTI
 // ============================================================
+// Sportello di caricamento verso Google Drive (Google Apps Script)
+const URL_SPORTELLO_DRIVE = "https://script.google.com/macros/s/AKfycbzb3hAaewS-pvjilrlgs7ILEvTf2J6ASmopETPqCzq7O49no2vkvXeB8WFA_8JgrcyN/exec";
+const TOKEN_SPORTELLO_DRIVE = "Ag3ndA26!!";
+
+function fileInBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]); // toglie il prefisso "data:...;base64,"
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function caricaSuDrive(file) {
+  const contenuto = await fileInBase64(file);
+  const risposta = await fetch(URL_SPORTELLO_DRIVE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ token: TOKEN_SPORTELLO_DRIVE, contenuto, tipo: file.type || 'application/octet-stream', nomeFile: file.name })
+  });
+  const risultato = await risposta.json();
+  if (!risultato.successo) throw new Error(risultato.errore || 'Errore sconosciuto');
+  return risultato.link;
+}
+
+window.anteprimaFileDocumento = function(input) {
+  const label = document.getElementById('label-carica-documento');
+  const hint = document.getElementById('documento-file-hint');
+  if (input.files && input.files[0]) {
+    label.classList.add('file-scelto');
+    label.childNodes[0].textContent = '✓ ' + input.files[0].name;
+    hint.textContent = 'Il file si carica su Google Drive quando clicchi "Aggiungi".';
+  } else {
+    label.classList.remove('file-scelto');
+    label.childNodes[0].textContent = '📎 Carica file';
+    hint.textContent = 'Puoi incollare un link, oppure caricare un file (foto, PDF, Word…) — verrà salvato in una cartella dedicata del tuo Google Drive.';
+  }
+};
+
 window.aggiungiDocumento = async function() {
   const tag = document.getElementById('documento-tag-input').value.trim();
   const titolo = document.getElementById('documento-titolo-input').value.trim();
   let url = document.getElementById('documento-url-input').value.trim();
-  if (!titolo || !url) return;
-  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  const fileInput = document.getElementById('documento-file');
+  const fileScelto = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+  if (!titolo || (!url && !fileScelto)) return;
   const categoria = document.getElementById('documento-categoria').value;
+  const btnAggiungi = document.getElementById('btn-aggiungi-documento');
+
+  if (fileScelto) {
+    btnAggiungi.disabled = true;
+    btnAggiungi.textContent = 'Carico su Drive…';
+    try {
+      url = await caricaSuDrive(fileScelto);
+    } catch (e) {
+      alert('Caricamento su Drive non riuscito: ' + e.message + '\nControlla di aver incollato il link giusto dello sportello e il codice segreto corretto.');
+      btnAggiungi.disabled = false;
+      btnAggiungi.textContent = 'Aggiungi';
+      return;
+    }
+    btnAggiungi.disabled = false;
+    btnAggiungi.textContent = 'Aggiungi';
+  } else if (url && !/^https?:\/\//i.test(url)) {
+    url = 'https://' + url;
+  }
+
   document.getElementById('documento-tag-input').value = '';
   document.getElementById('documento-titolo-input').value = '';
   document.getElementById('documento-url-input').value = '';
+  fileInput.value = '';
+  anteprimaFileDocumento(fileInput);
   await addDoc(collection(db, 'documenti'), { tag, titolo, url, categoria, creato: serverTimestamp() });
 };
 window.eliminaDocumento = async function(id) {
