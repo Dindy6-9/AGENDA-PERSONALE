@@ -152,6 +152,8 @@
     cursor: pointer; background: var(--paper); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700;
   }
   .appuntamento-quando { width: 58px; flex-shrink: 0; text-align: center; border: 1.5px solid var(--forest-dark); border-radius: 2px; padding: 3px 2px; }
+  .appuntamento-quando.data-cliccabile { cursor: pointer; }
+  .appuntamento-quando.data-cliccabile:hover { opacity: 0.7; }
   .appuntamento-data { font-size: 0.7rem; font-weight: 700; color: var(--forest-dark); }
   .appuntamento-ora { font-size: 0.72rem; font-weight: 700; color: var(--ink-soft); }
   .appuntamento-contenuto { flex: 1; font-size: 0.86rem; }
@@ -169,10 +171,13 @@
   .contatto-chiamata-ricevuta { background: var(--forest); }
   .contatto-email-fatta { background: var(--brick); }
   .contatto-email-ricevuta { background: #B08AC9; }
+  .contatto-whatsapp-fatto { background: #4CAF50; }
+  .contatto-whatsapp-ricevuto { background: #81C784; }
   .contatto-corpo { flex: 1; display: flex; flex-direction: column; gap: 2px; }
   .contatto-riga1 { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .contatto-nome { font-weight: 700; font-size: 0.88rem; color: var(--ink); }
-  .contatto-data { font-size: 0.72rem; color: var(--ink-soft); font-weight: 600; flex-shrink: 0; }
+  .contatto-data { font-size: 0.72rem; color: var(--ink-soft); font-weight: 600; flex-shrink: 0; cursor: pointer; }
+  .contatto-data:hover { opacity: 0.7; }
   .contatto-recapito { font-size: 0.78rem; color: var(--forest-dark); }
   .contatto-motivo { font-size: 0.84rem; color: var(--ink); }
   .contatto-nome-input, .contatto-recapito-input { flex: 0 0 140px !important; }
@@ -214,7 +219,9 @@
   .link-row { display: flex; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); }
   .link-row:last-child { border-bottom: none; }
   .link-row .titolo { font-weight: 500; font-size: 0.82rem; flex: 1; }
-  .link-row a { font-size: 0.74rem; color: var(--forest); text-decoration: none; border-bottom: 1px solid var(--forest); }
+  .link-row a.link-icona { font-size: 1rem; color: var(--forest); text-decoration: none; flex-shrink: 0; }
+  .documento-data { font-size: 0.7rem; font-weight: 700; color: var(--forest-dark); flex-shrink: 0; cursor: pointer; width: 54px; }
+  .documento-data:hover { opacity: 0.7; }
   #documenti-lista:empty::after { content: "Nessun documento salvato"; font-size: 0.82rem; color: var(--ink-soft); font-style: italic; }
 
   /* Spese */
@@ -227,6 +234,31 @@
   .mese-freccia:hover { background: var(--forest); color: #fff; }
   .mese-corrente { font-family: 'Fraunces', serif; font-weight: 700; font-size: 1rem; color: var(--ink); min-width: 150px; text-align: center; }
   .riepilogo-totale { background: var(--surface); border: 1.5px solid var(--forest-dark); border-radius: 3px; padding: 10px 14px; text-align: center; margin-bottom: 16px; }
+  .contanti-wrap { background: var(--surface); border-radius: 4px; padding: 12px 14px; margin-bottom: 16px; }
+  .contanti-conti { display: flex; gap: 10px; margin-bottom: 10px; }
+  .contanti-conto {
+    flex: 1;
+    background: var(--paper);
+    border: 1.5px solid var(--forest-dark);
+    border-radius: 3px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .contanti-conto-nome { display: block; font-size: 0.72rem; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.03em; }
+  .contanti-conto-saldo { display: block; font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 700; color: var(--forest-dark); }
+  .contanti-movimento {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .contanti-movimento:last-child { border-bottom: none; }
+  .contanti-mov-conto { font-weight: 700; color: var(--ink-soft); width: 46px; flex-shrink: 0; }
+  .contanti-mov-segno-piu { color: #2E7D32; font-weight: 700; width: 80px; flex-shrink: 0; }
+  .contanti-mov-segno-meno { color: var(--rosso-allarme); font-weight: 700; width: 80px; flex-shrink: 0; }
+  .contanti-mov-nota { flex: 1; color: var(--ink-soft); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .riepilogo-etichetta { display: block; font-size: 0.7rem; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 2px; }
   .riepilogo-importo { display: block; font-family: 'Fraunces', serif; font-size: 1.3rem; font-weight: 700; color: var(--forest-dark); }
   .riepilogo-categorie { margin-bottom: 8px; padding: 10px 12px; background: var(--surface); border-radius: 3px; }
@@ -236,10 +268,11 @@
   .riepilogo-cat-barra { flex: 1; height: 8px; background: var(--paper); border-radius: 3px; overflow: hidden; }
   .riepilogo-cat-barra span { display: block; height: 100%; background: var(--forest); }
   .riepilogo-cat-val { width: 70px; flex-shrink: 0; text-align: right; font-weight: 600; color: var(--ink-soft); }
-  .spesa { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; min-width: 520px; }
+  .spesa { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; min-width: 620px; }
   .spesa:last-child { border-bottom: none; }
   .spesa-data { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.74rem; color: var(--forest-dark); width: 40px; flex-shrink: 0; cursor: pointer; }
   .spesa-descrizione { flex: 1; min-width: 140px; }
+  .spesa-dove { flex: 0 0 100px; font-size: 0.76rem; color: var(--ink-soft); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .spesa-importo { font-weight: 700; font-size: 0.88rem; color: var(--ink); flex-shrink: 0; width: 72px; text-align: right; }
   .spesa-scontrino { flex-shrink: 0; text-decoration: none; font-size: 0.9rem; border: none; background: none; cursor: pointer; padding: 0; }
   .btn-carica-file {
@@ -424,6 +457,8 @@
           <option value="chiamata-ricevuta">📞 Chiamata ricevuta</option>
           <option value="email-fatta">📧 Email fatta</option>
           <option value="email-ricevuta">📧 Email ricevuta</option>
+          <option value="whatsapp-fatto">💬 WhatsApp fatto</option>
+          <option value="whatsapp-ricevuto">💬 WhatsApp ricevuto</option>
         </select>
         <input type="text" id="contatto-nome-input" placeholder="Nominativo…" class="contatto-nome-input">
         <input type="text" id="contatto-recapito-input" placeholder="Telefono/email (opzionale)…" class="contatto-recapito-input">
@@ -456,6 +491,7 @@
       <div class="filtri-categoria" id="filtri-documenti"></div>
       <div id="documenti-lista"></div>
       <div class="add-row documento-add-row">
+        <input type="date" id="documento-data-input" class="diario-data-input">
         <input type="text" id="documento-tag-input" placeholder="Titolino (es. Polizza auto)…" class="tag-input">
         <input type="text" id="documento-titolo-input" placeholder="Descrizione…" style="flex:1;">
         <input type="text" id="documento-url-input" placeholder="Link (opzionale se carichi un file)…" style="flex:1;">
@@ -480,11 +516,41 @@
         <span class="riepilogo-etichetta">Totale mese</span>
         <span class="riepilogo-importo" id="totale-mese-label">€ 0,00</span>
       </div>
+
+      <div class="contanti-wrap">
+        <h3 class="sottotitolo" style="margin-bottom:8px;">💶 Contanti</h3>
+        <div class="contanti-conti">
+          <div class="contanti-conto">
+            <span class="contanti-conto-nome">Mio</span>
+            <span class="contanti-conto-saldo" id="saldo-mio">€ 0,00</span>
+          </div>
+          <div class="contanti-conto">
+            <span class="contanti-conto-nome">Figlia</span>
+            <span class="contanti-conto-saldo" id="saldo-figlia">€ 0,00</span>
+          </div>
+        </div>
+        <div class="add-row contanti-add-row">
+          <select id="contanti-conto-input" class="categoria-select">
+            <option value="mio">Mio</option>
+            <option value="figlia">Figlia</option>
+          </select>
+          <select id="contanti-segno-input" class="categoria-select">
+            <option value="1">+ Entrata</option>
+            <option value="-1">− Uscita/dato</option>
+          </select>
+          <input type="number" step="0.01" id="contanti-importo-input" placeholder="Importo €" style="flex:0 0 100px;">
+          <input type="text" id="contanti-nota-input" placeholder="Nota (opzionale)…" style="flex:1;">
+          <button onclick="aggiungiMovimentoContanti()">Registra</button>
+        </div>
+        <div id="contanti-movimenti-lista"></div>
+      </div>
+
       <div class="filtri-categoria" id="filtri-spese"></div>
       <div class="scroll-orizzontale"><div id="spese-lista"></div></div>
       <div class="add-row spesa-add-row">
         <input type="date" id="spesa-data-input" class="diario-data-input">
         <input type="text" id="spesa-motivo-input" placeholder="Per cosa…" style="flex:1;">
+        <input type="text" id="spesa-dove-input" placeholder="Dove (es. Supermercato)…" class="tag-input">
         <input type="number" step="0.01" id="spesa-importo-input" placeholder="Importo €" class="spesa-importo-input" style="flex:0 0 100px;">
         <select id="spesa-categoria" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-categoria')"></select>
         <select id="spesa-metodo" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-metodo')"></select>
@@ -506,6 +572,12 @@
 
       <h3 class="sottotitolo" style="margin-top:16px;" id="riepilogo-anno-titolo">Riepilogo per categoria — anno</h3>
       <div class="riepilogo-categorie" id="riepilogo-anno"></div>
+
+      <h3 class="sottotitolo" style="margin-top:16px;">Riepilogo per metodo di pagamento — questo mese</h3>
+      <div class="riepilogo-categorie" id="riepilogo-metodo-mese"></div>
+
+      <h3 class="sottotitolo" style="margin-top:16px;" id="riepilogo-metodo-anno-titolo">Riepilogo per metodo di pagamento — anno</h3>
+      <div class="riepilogo-categorie" id="riepilogo-metodo-anno"></div>
     </section>
 
     <section class="panel" id="completate">
@@ -786,6 +858,7 @@ document.getElementById('diario-data-input').value = oggiISO();
 document.getElementById('appuntamento-data-input').value = oggiISO();
 document.getElementById('contatto-data-input').value = oggiISO();
 document.getElementById('spesa-data-input').value = oggiISO();
+document.getElementById('documento-data-input').value = oggiISO();
 
 let filtroAttivoScadenze = null, filtroAttivoDocumenti = null, filtroAttivoSpese = null;
 let ultimiDocsScadenze = [], ultimiDocsDocumenti = [], ultimiDocsSpese = [];
@@ -842,6 +915,17 @@ window.cambiaDataScadenza = function(id, dataAttuale, dataEl) {
   const input = document.createElement('input');
   input.type = 'date'; input.value = dataAttuale; input.className = 'data-input-inline';
   input.onchange = async () => { await updateDoc(doc(db, 'scadenze', id), { data: input.value }); };
+  input.onblur = () => { if (input.parentNode) input.parentNode.replaceChild(dataEl, input); };
+  dataEl.parentNode.replaceChild(input, dataEl);
+  input.focus();
+};
+
+// Versione generica: cambia la data di una qualunque voce (collezione + campo indicati)
+window.cambiaDataVoce = function(id, dataAttuale, dataEl, collezione, campo) {
+  campo = campo || 'data';
+  const input = document.createElement('input');
+  input.type = 'date'; input.value = dataAttuale; input.className = 'data-input-inline';
+  input.onchange = async () => { await updateDoc(doc(db, collezione, id), { [campo]: input.value }); };
   input.onblur = () => { if (input.parentNode) input.parentNode.replaceChild(dataEl, input); };
   dataEl.parentNode.replaceChild(input, dataEl);
   input.focus();
@@ -992,7 +1076,7 @@ function renderAppuntamenti(snap) {
     el.setAttribute('data-search', a.titolo.toLowerCase());
     el.innerHTML = `
       <div class="checkbox" title="Segna come fatto → passa al Diario"></div>
-      <div class="appuntamento-quando"><div class="appuntamento-data">${dataBreve}</div>${a.ora ? '<div class="appuntamento-ora">' + a.ora + '</div>' : ''}</div>
+      <div class="appuntamento-quando data-cliccabile" title="Clicca per cambiare la data"><div class="appuntamento-data">${dataBreve}</div>${a.ora ? '<div class="appuntamento-ora">' + a.ora + '</div>' : ''}</div>
       <div class="appuntamento-contenuto">
         <span class="appuntamento-titolo">${escapeHtml(a.titolo)}</span>
         ${a.allarme ? '<div class="meta' + (allarmeAttivo ? ' meta-allarme-pulsante' : '') + '" title="Clicca per cambiare quando avvisare">🔔 allarme attivo</div>' : ''}
@@ -1000,6 +1084,7 @@ function renderAppuntamenti(snap) {
       <button class="elimina" onclick="eliminaAppuntamento('${a.id}')" title="Elimina">🗑</button>
     `;
     el.querySelector('.checkbox').onclick = () => spuntaAppuntamento(a.id, a.titolo, a.data);
+    el.querySelector('.data-cliccabile').onclick = function() { cambiaDataVoce(a.id, a.data, this, 'appuntamenti'); };
     abilitaModifica(el.querySelector('.appuntamento-titolo'), 'appuntamenti', a.id, 'titolo');
     const metaEl = el.querySelector('.meta');
     if (metaEl) metaEl.onclick = () => cambiaAnticipoAppuntamento(a.id, a.anticipoMinuti, metaEl);
@@ -1012,7 +1097,8 @@ function renderAppuntamenti(snap) {
 // ============================================================
 const ETICHETTE_TIPO_CONTATTO = {
   'chiamata-fatta': '📞 Fatta', 'chiamata-ricevuta': '📞 Ricevuta',
-  'email-fatta': '📧 Fatta', 'email-ricevuta': '📧 Ricevuta'
+  'email-fatta': '📧 Fatta', 'email-ricevuta': '📧 Ricevuta',
+  'whatsapp-fatto': '💬 Fatto', 'whatsapp-ricevuto': '💬 Ricevuto'
 };
 window.aggiungiContatto = async function() {
   const nome = document.getElementById('contatto-nome-input').value.trim();
@@ -1044,7 +1130,7 @@ function renderContatti(snap) {
     el.innerHTML = `
       <span class="contatto-badge contatto-${c.tipo}">${ETICHETTE_TIPO_CONTATTO[c.tipo] || c.tipo}</span>
       <div class="contatto-corpo">
-        <div class="contatto-riga1"><span class="contatto-nome">${escapeHtml(c.nome)}</span><span class="contatto-data">${formatDataCorta(c.data)}</span></div>
+        <div class="contatto-riga1"><span class="contatto-nome">${escapeHtml(c.nome)}</span><span class="contatto-data data-cliccabile" title="Clicca per cambiare la data">${formatDataCorta(c.data)}</span></div>
         ${c.recapito ? '<span class="contatto-recapito">' + escapeHtml(c.recapito) + '</span>' : ''}
         <span class="contatto-motivo">${escapeHtml(c.motivo)}</span>
       </div>
@@ -1053,6 +1139,7 @@ function renderContatti(snap) {
     abilitaModifica(el.querySelector('.contatto-nome'), 'contatti', c.id, 'nome');
     abilitaModifica(el.querySelector('.contatto-motivo'), 'contatti', c.id, 'motivo');
     if (c.recapito) abilitaModifica(el.querySelector('.contatto-recapito'), 'contatti', c.id, 'recapito');
+    el.querySelector('.contatto-data').onclick = function() { cambiaDataVoce(c.id, c.data, this, 'contatti'); };
     cont.appendChild(el);
   });
 }
@@ -1176,6 +1263,7 @@ window.anteprimaFileDocumento = function(input) {
 window.aggiungiDocumento = async function() {
   const tag = document.getElementById('documento-tag-input').value.trim();
   const titolo = document.getElementById('documento-titolo-input').value.trim();
+  const data = document.getElementById('documento-data-input').value || oggiISO();
   let url = document.getElementById('documento-url-input').value.trim();
   const fileInput = document.getElementById('documento-file');
   const fileScelto = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
@@ -1205,7 +1293,7 @@ window.aggiungiDocumento = async function() {
   document.getElementById('documento-url-input').value = '';
   fileInput.value = '';
   anteprimaFileDocumento(fileInput);
-  await addDoc(collection(db, 'documenti'), { tag, titolo, url, categoria, creato: serverTimestamp() });
+  await addDoc(collection(db, 'documenti'), { tag, titolo, url, categoria, data, creato: serverTimestamp() });
 };
 window.eliminaDocumento = async function(id) {
   if (!confirm('Eliminare questo documento?')) return;
@@ -1244,6 +1332,7 @@ function renderDocumenti(snap) {
   cont.innerHTML = '';
   const docs = [];
   snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
+  docs.sort((a, b) => (b.data || '').localeCompare(a.data || ''));
   ultimiDocsDocumenti = docs;
   renderFiltriDocumenti(docs);
   docs.forEach(d => {
@@ -1252,15 +1341,17 @@ function renderDocumenti(snap) {
     el.setAttribute('data-search', ((d.tag||'') + ' ' + d.titolo).toLowerCase());
     el.setAttribute('data-categoria', d.categoria || 'Altro');
     el.innerHTML = `
+      <span class="documento-data data-cliccabile" title="Clicca per cambiare la data">${d.data ? formatDataCorta(d.data) : '—'}</span>
       ${d.tag ? '<span class="tag-nota-inline tag-testo">' + escapeHtml(d.tag) + '</span>' : '<span class="tag-nota-inline tag-testo" style="opacity:0.5;">+ titolino</span>'}
       <div class="titolo titolo-doc">${escapeHtml(d.titolo)}</div>
       <span class="badge-categoria badge-cat-cliccabile" title="Clicca per cambiare categoria">${escapeHtml(d.categoria || 'Altro')}</span>
-      <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener">Apri ↗</a>
+      <a href="${escapeHtml(d.url)}" target="_blank" rel="noopener" class="link-icona" title="Apri">🔗</a>
       <button class="elimina" onclick="eliminaDocumento('${d.id}')" title="Elimina">🗑</button>
     `;
     abilitaModifica(el.querySelector('.titolo-doc'), 'documenti', d.id, 'titolo');
     abilitaModifica(el.querySelector('.tag-testo'), 'documenti', d.id, 'tag');
     el.querySelector('.badge-cat-cliccabile').onclick = function() { cambiaCategoriaVoce(d.id, d.categoria || 'Altro', 'documenti', 'documenti', 'categoria', this); };
+    el.querySelector('.documento-data').onclick = function() { cambiaDataVoce(d.id, d.data || oggiISO(), this, 'documenti'); };
     cont.appendChild(el);
   });
   applicaFiltroDocumenti();
@@ -1367,6 +1458,7 @@ function comprimiImmagine(file, maxLarghezza, qualita) {
 
 window.aggiungiSpesa = async function() {
   const motivo = document.getElementById('spesa-motivo-input').value.trim();
+  const dove = document.getElementById('spesa-dove-input').value.trim();
   const data = document.getElementById('spesa-data-input').value;
   const importoVal = parseFloat(document.getElementById('spesa-importo-input').value);
   if (!motivo || !data || isNaN(importoVal)) return;
@@ -1401,8 +1493,9 @@ window.aggiungiSpesa = async function() {
     btnAggiungi.textContent = 'Aggiungi';
   }
 
-  await addDoc(collection(db, 'spese'), { motivo, data, importo: importoVal, categoria, metodo, scontrinoUrl: scontrinoUrl || null, scontrinoFoto, creato: serverTimestamp() });
+  await addDoc(collection(db, 'spese'), { motivo, dove, data, importo: importoVal, categoria, metodo, scontrinoUrl: scontrinoUrl || null, scontrinoFoto, creato: serverTimestamp() });
   document.getElementById('spesa-motivo-input').value = '';
+  document.getElementById('spesa-dove-input').value = '';
   document.getElementById('spesa-importo-input').value = '';
   document.getElementById('spesa-scontrino-input').value = '';
   inputGalleria.value = '';
@@ -1444,11 +1537,12 @@ function renderSpese(snap) {
   delMese.forEach(s => {
     const el = document.createElement('div');
     el.className = 'spesa';
-    el.setAttribute('data-search', s.motivo.toLowerCase());
+    el.setAttribute('data-search', (s.motivo + ' ' + (s.dove || '')).toLowerCase());
     el.setAttribute('data-categoria', s.categoria || 'Altro');
     el.innerHTML = `
       <div class="spesa-data data-cliccabile" title="Clicca per cambiare la data">${formatDataCorta(s.data)}</div>
       <span class="spesa-descrizione descrizione-testo">${escapeHtml(s.motivo)}</span>
+      ${s.dove ? '<span class="spesa-dove dove-testo">' + escapeHtml(s.dove) + '</span>' : '<span class="spesa-dove dove-testo" style="opacity:0.4;">+ dove</span>'}
       ${s.scontrinoUrl ? '<a href="' + escapeHtml(s.scontrinoUrl) + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri link scontrino">📎</a>' : ''}
       ${s.scontrinoFoto ? '<button type="button" class="spesa-scontrino btn-vedi-foto" title="Apri foto scontrino">🖼️</button>' : ''}
       <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
@@ -1457,6 +1551,7 @@ function renderSpese(snap) {
       <button class="elimina" onclick="eliminaSpesa('${s.id}')" title="Elimina">🗑</button>
     `;
     abilitaModifica(el.querySelector('.descrizione-testo'), 'spese', s.id, 'motivo');
+    abilitaModifica(el.querySelector('.dove-testo'), 'spese', s.id, 'dove');
     el.querySelector('.data-cliccabile').onclick = function() { cambiaDataSpesa(s.id, s.data, this); };
     el.querySelector('.badge-cat-cliccabile').onclick = function() { cambiaCategoriaVoce(s.id, s.categoria || 'Altro', 'spese-categoria', 'spese', 'categoria', this); };
     el.querySelector('.badge-metodo-cliccabile').onclick = function() { cambiaCategoriaVoce(s.id, s.metodo || 'Altro', 'spese-metodo', 'spese', 'metodo', this); };
@@ -1477,17 +1572,69 @@ function renderSpese(snap) {
   document.getElementById('totale-mese-label').textContent = formattaEuro(totaleMese);
 
   const delAnno = tutti.filter(s => new Date(s.data + 'T00:00:00').getFullYear() === annoVisualizzato);
-  renderRiepilogoCategorie('riepilogo-mese', delMese);
-  renderRiepilogoCategorie('riepilogo-anno', delAnno);
+  renderRiepilogoCategorie('riepilogo-mese', delMese, 'categoria');
+  renderRiepilogoCategorie('riepilogo-anno', delAnno, 'categoria');
+  renderRiepilogoCategorie('riepilogo-metodo-mese', delMese, 'metodo');
+  renderRiepilogoCategorie('riepilogo-metodo-anno', delAnno, 'metodo');
+  document.getElementById('riepilogo-metodo-anno-titolo').textContent = 'Riepilogo per metodo di pagamento — anno ' + annoVisualizzato;
 }
 
-function renderRiepilogoCategorie(contId, elenco) {
+// ============================================================
+// CONTANTI (Mio / Figlia)
+// ============================================================
+window.aggiungiMovimentoContanti = async function() {
+  const conto = document.getElementById('contanti-conto-input').value;
+  const segno = parseInt(document.getElementById('contanti-segno-input').value, 10);
+  const importoVal = parseFloat(document.getElementById('contanti-importo-input').value);
+  const nota = document.getElementById('contanti-nota-input').value.trim();
+  if (isNaN(importoVal) || importoVal <= 0) return;
+  await addDoc(collection(db, 'contanti_movimenti'), { conto, segno, importo: importoVal, nota, creato: serverTimestamp() });
+  document.getElementById('contanti-importo-input').value = '';
+  document.getElementById('contanti-nota-input').value = '';
+};
+window.eliminaMovimentoContanti = async function(id) {
+  if (!confirm('Eliminare questo movimento? Il saldo verrà ricalcolato.')) return;
+  await deleteDoc(doc(db, 'contanti_movimenti', id));
+};
+
+function renderContanti(snap) {
+  const movimenti = [];
+  snap.forEach(d => movimenti.push({ id: d.id, ...d.data() }));
+
+  const saldi = { mio: 0, figlia: 0 };
+  movimenti.forEach(m => { saldi[m.conto] = (saldi[m.conto] || 0) + m.segno * m.importo; });
+  document.getElementById('saldo-mio').textContent = formattaEuro(saldi.mio || 0);
+  document.getElementById('saldo-figlia').textContent = formattaEuro(saldi.figlia || 0);
+
+  movimenti.sort((a, b) => {
+    const ta = a.creato && a.creato.toMillis ? a.creato.toMillis() : 0;
+    const tb = b.creato && b.creato.toMillis ? b.creato.toMillis() : 0;
+    return tb - ta;
+  });
+  const cont = document.getElementById('contanti-movimenti-lista');
+  cont.innerHTML = '';
+  movimenti.slice(0, 20).forEach(m => {
+    const el = document.createElement('div');
+    el.className = 'contanti-movimento';
+    const segnoPositivo = m.segno > 0;
+    el.innerHTML = `
+      <span class="contanti-mov-conto">${m.conto === 'mio' ? 'Mio' : 'Figlia'}</span>
+      <span class="${segnoPositivo ? 'contanti-mov-segno-piu' : 'contanti-mov-segno-meno'}">${segnoPositivo ? '+' : '−'} ${formattaEuro(m.importo)}</span>
+      <span class="contanti-mov-nota">${escapeHtml(m.nota || '')}</span>
+      <button class="elimina" onclick="eliminaMovimentoContanti('${m.id}')" title="Elimina">🗑</button>
+    `;
+    cont.appendChild(el);
+  });
+}
+
+function renderRiepilogoCategorie(contId, elenco, campo) {
+  campo = campo || 'categoria';
   const cont = document.getElementById(contId);
   cont.innerHTML = '';
   const totali = {};
   let totaleComplessivo = 0;
   elenco.forEach(s => {
-    const cat = s.categoria || 'Altro';
+    const cat = s[campo] || 'Altro';
     totali[cat] = (totali[cat] || 0) + (s.importo || 0);
     totaleComplessivo += (s.importo || 0);
   });
@@ -1546,6 +1693,7 @@ function avviaAscoltoDati() {
   onSnapshot(collection(db, 'appunti'), snap => { renderAppunti(snap); aggiornaRicerca(); });
   onSnapshot(collection(db, 'documenti'), snap => { renderDocumenti(snap); aggiornaRicerca(); });
   onSnapshot(collection(db, 'spese'), snap => { renderSpese(snap); aggiornaRicerca(); });
+  onSnapshot(collection(db, 'contanti_movimenti'), snap => { renderContanti(snap); });
   document.getElementById('stato-connessione').textContent = 'Collegata a Firebase';
   intervalloAllarmi = setInterval(() => { renderAppuntamenti; }, 60000);
 }
