@@ -256,6 +256,8 @@
   }
   .contanti-movimento:last-child { border-bottom: none; }
   .contanti-mov-conto { font-weight: 700; color: var(--ink-soft); width: 46px; flex-shrink: 0; }
+  .contanti-mov-data { font-weight: 700; color: var(--forest-dark); width: 46px; flex-shrink: 0; font-size: 0.72rem; cursor: pointer; }
+  .contanti-mov-data:hover { opacity: 0.7; }
   .contanti-mov-segno-piu { color: #2E7D32; font-weight: 700; width: 80px; flex-shrink: 0; }
   .contanti-mov-segno-meno { color: var(--rosso-allarme); font-weight: 700; width: 80px; flex-shrink: 0; }
   .contanti-mov-nota { flex: 1; color: var(--ink-soft); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -348,6 +350,15 @@
     header.appbar, .search-row, nav.tabs, footer.note, .add-row { display: none !important; }
     section.panel { padding: 0; }
     [contenteditable="true"]:hover, [contenteditable="true"]:focus { background: none !important; outline: none !important; }
+    /* Nella stampa di Spese, nascondi tutto il contorno: resta solo l'elenco (già filtrato se hai scelto una categoria/metodo) */
+    #spese .navigatore-mese, #spese .contanti-wrap, #spese .riepilogo-totale,
+    #spese .sottotitolo, #spese .riepilogo-categorie, #spese .filtri-categoria,
+    #spese .search-hint { display: none !important; }
+    /* Stampa dedicata dei soli movimenti Contanti (attivata dal pulsante apposito) */
+    body.stampa-solo-contanti #spese > *:not(.contanti-wrap) { display: none !important; }
+    body.stampa-solo-contanti #spese .contanti-wrap { display: block !important; }
+    body.stampa-solo-contanti .contanti-add-row,
+    body.stampa-solo-contanti .contanti-wrap .search-hint { display: none !important; }
   }
 </style>
 </head>
@@ -518,7 +529,10 @@
       </div>
 
       <div class="contanti-wrap">
-        <h3 class="sottotitolo" style="margin-bottom:8px;">💶 Contanti</h3>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <h3 class="sottotitolo" style="margin-bottom:0;">💶 Contanti</h3>
+          <button type="button" class="btn-export" onclick="stampaContanti()">🖨 Stampa movimenti</button>
+        </div>
         <div class="contanti-conti">
           <div class="contanti-conto">
             <span class="contanti-conto-nome">Mio</span>
@@ -530,6 +544,7 @@
           </div>
         </div>
         <div class="add-row contanti-add-row">
+          <input type="date" id="contanti-data-input" class="diario-data-input">
           <select id="contanti-conto-input" class="categoria-select">
             <option value="mio">Mio</option>
             <option value="figlia">Figlia</option>
@@ -539,9 +554,11 @@
             <option value="-1">− Uscita/dato</option>
           </select>
           <input type="number" step="0.01" id="contanti-importo-input" placeholder="Importo €" style="flex:0 0 100px;">
+          <select id="contanti-categoria-input" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'contanti-categoria')"></select>
           <input type="text" id="contanti-nota-input" placeholder="Nota (opzionale)…" style="flex:1;">
           <button onclick="aggiungiMovimentoContanti()">Registra</button>
         </div>
+        <div class="search-hint" style="display:block; margin-top:4px;">La categoria è facoltativa — lascia pure "Nessuna" se non ti serve classificare questo movimento.</div>
         <div id="contanti-movimenti-lista"></div>
       </div>
 
@@ -706,13 +723,15 @@ const LISTE_CATEGORIE = {
   'scadenze': ['Bandi', 'Casa', 'Auto', 'Salute', 'Altro'],
   'documenti': ['Casa', 'Auto', 'Salute', 'Altro'],
   'spese-categoria': ['Alimentari', 'Trasporti', 'Casa', 'Salute', 'Svago', 'Altro'],
-  'spese-metodo': ['Contanti', 'Carta', 'Bonifico', 'Altro']
+  'spese-metodo': ['Contanti', 'Carta', 'Bonifico', 'Altro'],
+  'contanti-categoria': ['Nessuna', 'Spesa quotidiana', 'Scuola', 'Trasporti', 'Altro']
 };
 const SELECT_PER_TIPO = {
   'scadenze': 'scadenza-categoria',
   'documenti': 'documento-categoria',
   'spese-categoria': 'spesa-categoria',
-  'spese-metodo': 'spesa-metodo'
+  'spese-metodo': 'spesa-metodo',
+  'contanti-categoria': 'contanti-categoria-input'
 };
 
 async function inizializzaListaCategorie(tipo) {
@@ -780,7 +799,7 @@ window.gestisciCategorie = async function(tipo, collezione, campo) {
   const indice = parseInt(scelta, 10) - 1;
   if (isNaN(indice) || indice < 0 || indice >= lista.length) { alert('Numero non valido.'); return; }
   const categoriaScelta = lista[indice];
-  if (categoriaScelta === 'Altro') { alert('"Altro" non si può modificare né eliminare.'); return; }
+  if (categoriaScelta === 'Altro' || categoriaScelta === 'Nessuna') { alert('"' + categoriaScelta + '" non si può modificare né eliminare.'); return; }
 
   const azione = prompt('"' + categoriaScelta + '":\n\n- Scrivi il NUOVO NOME per rinominarla\n- Scrivi ELIMINA per cancellarla (le voci passeranno ad "Altro")\n- Lascia vuoto per annullare');
   if (!azione || azione.trim() === '') return;
@@ -859,6 +878,7 @@ document.getElementById('appuntamento-data-input').value = oggiISO();
 document.getElementById('contatto-data-input').value = oggiISO();
 document.getElementById('spesa-data-input').value = oggiISO();
 document.getElementById('documento-data-input').value = oggiISO();
+document.getElementById('contanti-data-input').value = oggiISO();
 
 let filtroAttivoScadenze = null, filtroAttivoDocumenti = null, filtroAttivoSpese = null;
 let ultimiDocsScadenze = [], ultimiDocsDocumenti = [], ultimiDocsSpese = [];
@@ -1587,8 +1607,10 @@ window.aggiungiMovimentoContanti = async function() {
   const segno = parseInt(document.getElementById('contanti-segno-input').value, 10);
   const importoVal = parseFloat(document.getElementById('contanti-importo-input').value);
   const nota = document.getElementById('contanti-nota-input').value.trim();
+  const data = document.getElementById('contanti-data-input').value || oggiISO();
+  const categoria = document.getElementById('contanti-categoria-input').value || 'Nessuna';
   if (isNaN(importoVal) || importoVal <= 0) return;
-  await addDoc(collection(db, 'contanti_movimenti'), { conto, segno, importo: importoVal, nota, creato: serverTimestamp() });
+  await addDoc(collection(db, 'contanti_movimenti'), { conto, segno, importo: importoVal, nota, data, categoria, creato: serverTimestamp() });
   document.getElementById('contanti-importo-input').value = '';
   document.getElementById('contanti-nota-input').value = '';
 };
@@ -1618,11 +1640,15 @@ function renderContanti(snap) {
     el.className = 'contanti-movimento';
     const segnoPositivo = m.segno > 0;
     el.innerHTML = `
+      <span class="contanti-mov-data data-cliccabile" title="Clicca per cambiare la data">${m.data ? formatDataCorta(m.data) : '—'}</span>
       <span class="contanti-mov-conto">${m.conto === 'mio' ? 'Mio' : 'Figlia'}</span>
       <span class="${segnoPositivo ? 'contanti-mov-segno-piu' : 'contanti-mov-segno-meno'}">${segnoPositivo ? '+' : '−'} ${formattaEuro(m.importo)}</span>
+      ${m.categoria && m.categoria !== 'Nessuna' ? '<span class="badge-categoria badge-cat-cliccabile" title="Clicca per cambiare categoria">' + escapeHtml(m.categoria) + '</span>' : '<span class="badge-categoria badge-cat-cliccabile" style="opacity:0.4;" title="Clicca per aggiungere una categoria">+ categoria</span>'}
       <span class="contanti-mov-nota">${escapeHtml(m.nota || '')}</span>
       <button class="elimina" onclick="eliminaMovimentoContanti('${m.id}')" title="Elimina">🗑</button>
     `;
+    el.querySelector('.contanti-mov-data').onclick = function() { cambiaDataVoce(m.id, m.data || oggiISO(), this, 'contanti_movimenti'); };
+    el.querySelector('.badge-cat-cliccabile').onclick = function() { cambiaCategoriaVoce(m.id, m.categoria || 'Nessuna', 'contanti-categoria', 'contanti_movimenti', 'categoria', this); };
     cont.appendChild(el);
   });
 }
@@ -1656,6 +1682,14 @@ function renderRiepilogoCategorie(contId, elenco, campo) {
 // STAMPA / DOWNLOAD
 // ============================================================
 window.stampaVista = function() { window.print(); };
+window.stampaContanti = function() {
+  document.body.classList.add('stampa-solo-contanti');
+  window.print();
+  // Rimuove la classe dopo la stampa (o dopo un attimo, se il browser non avvisa quando la finestra di stampa si chiude)
+  const pulisci = () => { document.body.classList.remove('stampa-solo-contanti'); window.removeEventListener('afterprint', pulisci); };
+  window.addEventListener('afterprint', pulisci);
+  setTimeout(pulisci, 3000);
+};
 window.scaricaVista = function() {
   const panelAttivo = document.querySelector('section.panel.active');
   const nomeTab = document.querySelector('nav.tabs button.active').textContent.trim();
