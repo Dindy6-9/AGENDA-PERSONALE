@@ -278,6 +278,18 @@
   .spesa-dove { flex: 0 0 100px; font-size: 0.76rem; color: var(--ink-soft); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .spesa-importo { font-weight: 700; font-size: 0.88rem; color: var(--ink); flex-shrink: 0; width: 72px; text-align: right; }
   .spesa-scontrino { flex-shrink: 0; text-decoration: none; font-size: 0.9rem; border: none; background: none; cursor: pointer; padding: 0; }
+  .allegato-inline-wrap { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .allegato-link-input {
+    width: 90px;
+    padding: 3px 5px;
+    font-size: 0.72rem;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: inherit;
+  }
+  .btn-carica-file-mini { cursor: pointer; font-size: 0.85rem; flex-shrink: 0; }
   .btn-carica-file {
     padding: 9px 12px;
     border: 1.5px solid var(--forest-dark);
@@ -773,21 +785,23 @@ window.gestisciNuovaCategoria = async function(select, tipo) {
   if (select.value === '__nuova__') {
     const nome = prompt('Nome della nuova voce:');
     if (nome && nome.trim() !== '') {
-      const nomeFinale = nome.trim();
+      let nomeFinale = nome.trim();
       const listaAttuale = LISTE_CATEGORIE[tipo];
-      if (!listaAttuale.includes(nomeFinale)) {
-        // Inserisce subito l'opzione nel menu, senza aspettare la conferma di Firebase
+      // Se esiste già una voce uguale (anche con maiuscole/minuscole diverse), riusa quella invece di crearne un'altra
+      const esistente = listaAttuale.find(c => c.toLowerCase() === nomeFinale.toLowerCase());
+      if (esistente) {
+        nomeFinale = esistente;
+      } else {
         const nuovaOpz = document.createElement('option');
         nuovaOpz.value = nomeFinale;
         nuovaOpz.textContent = nomeFinale;
         const opzioneAggiungi = select.querySelector('option[value="__nuova__"]');
         select.insertBefore(nuovaOpz, opzioneAggiungi);
+        const refDoc = doc(db, 'categorie', tipo);
+        const nuovaLista = [...listaAttuale.filter(c => c !== 'Altro'), nomeFinale, 'Altro'];
+        await setDoc(refDoc, { lista: nuovaLista });
       }
       select.value = nomeFinale;
-      // Salva su Firebase in background (aggiorna anche gli altri dispositivi)
-      const refDoc = doc(db, 'categorie', tipo);
-      const nuovaLista = [...listaAttuale.filter(c => c !== 'Altro' && c !== nomeFinale), nomeFinale, 'Altro'];
-      await setDoc(refDoc, { lista: nuovaLista });
     } else { select.value = 'Altro'; }
   }
 };
@@ -1451,6 +1465,42 @@ window.anteprimaFileScontrino = function(input) {
   }
 };
 
+window.apriFormAllegatoSpesa = function(id, btnEl) {
+  const wrap = document.createElement('span');
+  wrap.className = 'allegato-inline-wrap';
+  wrap.innerHTML = `
+    <input type="text" class="allegato-link-input" placeholder="Incolla link…">
+    <label class="btn-carica-file-mini" title="Scatta foto">📷<input type="file" accept="image/*" capture="environment" style="display:none;"></label>
+    <label class="btn-carica-file-mini" title="Scegli file">🖼️<input type="file" accept="image/*" style="display:none;"></label>
+  `;
+  const linkInput = wrap.querySelector('.allegato-link-input');
+  linkInput.onblur = async () => {
+    let v = linkInput.value.trim();
+    if (!v) return;
+    if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+    await updateDoc(doc(db, 'spese', id), { scontrinoUrl: v });
+  };
+  linkInput.onkeydown = (e) => { if (e.key === 'Enter') linkInput.blur(); };
+
+  const gestisciFile = async (input) => {
+    if (!input.files || !input.files[0]) return;
+    try {
+      let foto = await comprimiImmagine(input.files[0], 900, 0.6);
+      if (foto.length > 900000) foto = await comprimiImmagine(input.files[0], 600, 0.45);
+      if (foto.length > 900000) { alert('Foto troppo pesante anche dopo la compressione, provane un\'altra o usa il link.'); return; }
+      await updateDoc(doc(db, 'spese', id), { scontrinoFoto: foto });
+    } catch (e) {
+      alert('Non sono riuscita a elaborare la foto.');
+    }
+  };
+  const [inputCamera, inputGalleria] = wrap.querySelectorAll('input[type="file"]');
+  inputCamera.onchange = () => gestisciFile(inputCamera);
+  inputGalleria.onchange = () => gestisciFile(inputGalleria);
+
+  btnEl.parentNode.replaceChild(wrap, btnEl);
+  linkInput.focus();
+};
+
 window.apriModalFoto = function(dataUrl) {
   document.getElementById('modal-foto-img').src = dataUrl;
   document.getElementById('modal-foto').style.display = 'flex';
@@ -1570,6 +1620,7 @@ function renderSpese(snap) {
       ${s.dove ? '<span class="spesa-dove dove-testo">' + escapeHtml(s.dove) + '</span>' : '<span class="spesa-dove dove-testo" style="opacity:0.4;">+ dove</span>'}
       ${s.scontrinoUrl ? '<a href="' + escapeHtml(s.scontrinoUrl) + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri link scontrino">📎</a>' : ''}
       ${s.scontrinoFoto ? '<button type="button" class="spesa-scontrino btn-vedi-foto" title="Apri foto scontrino">🖼️</button>' : ''}
+      ${(!s.scontrinoUrl && !s.scontrinoFoto) ? '<button type="button" class="spesa-scontrino btn-aggiungi-allegato" title="Aggiungi scontrino">➕</button>' : ''}
       <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
       <span class="badge-categoria badge-cat-cliccabile" title="Categoria">${escapeHtml(s.categoria || 'Altro')}</span>
       <span class="badge-metodo badge-metodo-cliccabile" title="Metodo di pagamento">${escapeHtml(s.metodo || 'Altro')}</span>
@@ -1582,6 +1633,8 @@ function renderSpese(snap) {
     el.querySelector('.badge-metodo-cliccabile').onclick = function() { cambiaCategoriaVoce(s.id, s.metodo || 'Altro', 'spese-metodo', 'spese', 'metodo', this); };
     const btnFoto = el.querySelector('.btn-vedi-foto');
     if (btnFoto) btnFoto.onclick = () => apriModalFoto(s.scontrinoFoto);
+    const btnAggiungiAllegato = el.querySelector('.btn-aggiungi-allegato');
+    if (btnAggiungiAllegato) btnAggiungiAllegato.onclick = function() { apriFormAllegatoSpesa(s.id, this); };
     const importoEl = el.querySelector('.importo-testo');
     importoEl.setAttribute('contenteditable', 'true');
     importoEl.addEventListener('blur', async () => {
@@ -1665,10 +1718,13 @@ function renderRiepilogoCategorie(contId, elenco, campo) {
   const cont = document.getElementById(contId);
   cont.innerHTML = '';
   const totali = {};
+  const etichette = {}; // conserva la scrittura originale (es. "POS") associata alla chiave minuscola
   let totaleComplessivo = 0;
   elenco.forEach(s => {
-    const cat = s[campo] || 'Altro';
-    totali[cat] = (totali[cat] || 0) + (s.importo || 0);
+    const catOriginale = s[campo] || 'Altro';
+    const chiave = catOriginale.toLowerCase();
+    if (!etichette[chiave]) etichette[chiave] = catOriginale;
+    totali[chiave] = (totali[chiave] || 0) + (s.importo || 0);
     totaleComplessivo += (s.importo || 0);
   });
   const categorieOrdinate = Object.keys(totali).sort((a, b) => totali[b] - totali[a]);
@@ -1676,11 +1732,11 @@ function renderRiepilogoCategorie(contId, elenco, campo) {
     cont.innerHTML = '<div style="font-size:0.8rem; color:var(--ink-soft); font-style:italic;">Nessuna spesa</div>';
     return;
   }
-  categorieOrdinate.forEach(cat => {
-    const perc = totaleComplessivo > 0 ? Math.round((totali[cat] / totaleComplessivo) * 100) : 0;
+  categorieOrdinate.forEach(chiave => {
+    const perc = totaleComplessivo > 0 ? Math.round((totali[chiave] / totaleComplessivo) * 100) : 0;
     const riga = document.createElement('div');
     riga.className = 'riepilogo-cat-riga';
-    riga.innerHTML = `<span class="riepilogo-cat-nome">${escapeHtml(cat)}</span><span class="riepilogo-cat-barra"><span style="width:${perc}%;"></span></span><span class="riepilogo-cat-val">${formattaEuro(totali[cat])}</span>`;
+    riga.innerHTML = `<span class="riepilogo-cat-nome">${escapeHtml(etichette[chiave])}</span><span class="riepilogo-cat-barra"><span style="width:${perc}%;"></span></span><span class="riepilogo-cat-val">${formattaEuro(totali[chiave])}</span>`;
     cont.appendChild(riga);
   });
 }
