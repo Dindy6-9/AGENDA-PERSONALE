@@ -591,7 +591,7 @@
         </label>
         <label class="btn-carica-file" id="label-carica-scontrino">
           🖼️ Scegli file
-          <input type="file" id="spesa-scontrino-file" accept="image/*" style="display:none;" onchange="anteprimaFileScontrino(this)">
+          <input type="file" id="spesa-scontrino-file" accept="image/*,application/pdf,.pdf" style="display:none;" onchange="anteprimaFileScontrino(this)">
         </label>
         <button id="btn-aggiungi-spesa" onclick="aggiungiSpesa()">Aggiungi</button>
       </div>
@@ -1471,7 +1471,7 @@ window.apriFormAllegatoSpesa = function(id, btnEl) {
   wrap.innerHTML = `
     <input type="text" class="allegato-link-input" placeholder="Incolla link…">
     <label class="btn-carica-file-mini" title="Scatta foto">📷<input type="file" accept="image/*" capture="environment" style="display:none;"></label>
-    <label class="btn-carica-file-mini" title="Scegli file">🖼️<input type="file" accept="image/*" style="display:none;"></label>
+    <label class="btn-carica-file-mini" title="Scegli file (foto o PDF)">🖼️<input type="file" accept="image/*,application/pdf,.pdf" style="display:none;"></label>
   `;
   const linkInput = wrap.querySelector('.allegato-link-input');
   linkInput.onblur = async () => {
@@ -1484,9 +1484,19 @@ window.apriFormAllegatoSpesa = function(id, btnEl) {
 
   const gestisciFile = async (input) => {
     if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    if (file.type === 'application/pdf') {
+      try {
+        const link = await caricaSuDrive(file);
+        await updateDoc(doc(db, 'spese', id), { scontrinoUrl: link });
+      } catch (e) {
+        alert('Caricamento del PDF su Drive non riuscito: ' + e.message);
+      }
+      return;
+    }
     try {
-      let foto = await comprimiImmagine(input.files[0], 900, 0.6);
-      if (foto.length > 900000) foto = await comprimiImmagine(input.files[0], 600, 0.45);
+      let foto = await comprimiImmagine(file, 900, 0.6);
+      if (foto.length > 900000) foto = await comprimiImmagine(file, 600, 0.45);
       if (foto.length > 900000) { alert('Foto troppo pesante anche dopo la compressione, provane un\'altra o usa il link.'); return; }
       await updateDoc(doc(db, 'spese', id), { scontrinoFoto: foto });
     } catch (e) {
@@ -1547,7 +1557,17 @@ window.aggiungiSpesa = async function() {
   const fileScelto = (inputGalleria.files && inputGalleria.files[0]) ? inputGalleria.files[0] : ((inputCamera.files && inputCamera.files[0]) ? inputCamera.files[0] : null);
   let scontrinoFoto = null;
   const btnAggiungi = document.getElementById('btn-aggiungi-spesa');
-  if (fileScelto) {
+  if (fileScelto && fileScelto.type === 'application/pdf') {
+    btnAggiungi.disabled = true;
+    btnAggiungi.textContent = 'Carico su Drive…';
+    try {
+      scontrinoUrl = await caricaSuDrive(fileScelto);
+    } catch (e) {
+      alert('Caricamento del PDF su Drive non riuscito: ' + e.message);
+    }
+    btnAggiungi.disabled = false;
+    btnAggiungi.textContent = 'Aggiungi';
+  } else if (fileScelto) {
     btnAggiungi.disabled = true;
     btnAggiungi.textContent = 'Comprimo…';
     try {
