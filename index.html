@@ -1683,6 +1683,12 @@ window.avviaSuddivisioneEsistente = function(s, badgeCatEl, btnSuddividiEl) {
   wrap.className = 'suddivisione-avvio-inline';
   const containerId = 'avvio-suddivisione-' + s.id;
   wrap.innerHTML = `<div id="${containerId}"></div>`;
+  const btnAggiungiVoce = document.createElement('button');
+  btnAggiungiVoce.type = 'button';
+  btnAggiungiVoce.className = 'btn-piccolo-suddivisione';
+  btnAggiungiVoce.textContent = '+ Aggiungi voce';
+  btnAggiungiVoce.onclick = () => aggiungiRigaSuddivisione(containerId, 'Altro', '', () => {});
+  wrap.appendChild(btnAggiungiVoce);
   const btnConferma = document.createElement('button');
   btnConferma.type = 'button';
   btnConferma.className = 'anticipo-conferma';
@@ -1693,7 +1699,6 @@ window.avviaSuddivisioneEsistente = function(s, badgeCatEl, btnSuddividiEl) {
   badgeCatEl.style.display = 'none';
   btnSuddividiEl.parentNode.replaceChild(wrap, btnSuddividiEl);
   aggiungiRigaSuddivisione(containerId, s.categoria || 'Altro', s.importo, () => {});
-  aggiungiRigaSuddivisione(containerId, 'Altro', '', () => {});
 };
 
 window.toggleSuddivisioneSpesa = function(checkbox) {
@@ -1703,7 +1708,6 @@ window.toggleSuddivisioneSpesa = function(checkbox) {
   document.getElementById('spesa-importo-input').style.opacity = checkbox.checked ? '0.5' : '1';
   const righe = document.getElementById('spesa-suddivisione-righe');
   if (checkbox.checked && righe.children.length === 0) {
-    aggiungiRigaSuddivisione('spesa-suddivisione-righe');
     aggiungiRigaSuddivisione('spesa-suddivisione-righe');
   }
 };
@@ -1861,8 +1865,8 @@ function renderSpese(snap) {
       const dettaglio = document.createElement('div');
       dettaglio.className = 'suddivisione-dettaglio';
       dettaglio.style.display = 'none';
-      renderDettaglioSuddivisione(dettaglio, s);
       cont.appendChild(dettaglio);
+      renderDettaglioSuddivisione(dettaglio, s);
       btnToggleSuddivisione.onclick = () => { dettaglio.style.display = dettaglio.style.display === 'none' ? 'block' : 'none'; };
     }
   });
