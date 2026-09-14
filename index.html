@@ -246,6 +246,8 @@
   }
   .contanti-conto-nome { display: block; font-size: 0.72rem; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.03em; }
   .contanti-conto-saldo { display: block; font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 700; color: var(--forest-dark); }
+  .contanti-conto-speso { display: block; font-size: 0.7rem; color: var(--ink-soft); margin-top: 2px; }
+  .contanti-conto-speso span { font-weight: 700; }
   .contanti-movimento {
     display: flex;
     align-items: center;
@@ -276,8 +278,43 @@
   .spesa-descrizione { flex: 1; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .spesa-descrizione:focus, .spesa-dove:focus { overflow: visible; white-space: normal; }
   .spesa-dove { flex: 0 0 100px; font-size: 0.76rem; color: var(--ink-soft); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .spesa-importo { font-weight: 700; font-size: 0.88rem; color: var(--ink); flex-shrink: 0; width: 72px; text-align: right; }
+  .spesa-importo { font-weight: 700; font-size: 0.88rem; color: var(--ink); flex-shrink: 0; width: 72px; text-align: right; border-bottom: 1px dashed var(--border); cursor: text; }
   .spesa-scontrino { flex-shrink: 0; text-decoration: none; font-size: 0.9rem; border: none; background: none; cursor: pointer; padding: 0; }
+  .suddivisione-riga { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .suddivisione-riga .suddivisione-importo {
+    width: 90px;
+    padding: 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--paper);
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--ink);
+  }
+  .btn-piccolo-suddivisione, .btn-suddividi-esistente {
+    padding: 3px 8px;
+    border: 1.5px solid var(--forest-dark);
+    border-radius: 3px;
+    background: var(--surface);
+    color: var(--forest-dark);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .btn-piccolo-suddivisione:hover, .btn-suddividi-esistente:hover { background: var(--forest); color: #fff; }
+  .btn-suddivisione-toggle {
+    cursor: pointer;
+    border: 1px solid var(--forest);
+  }
+  .suddivisione-dettaglio {
+    background: var(--surface);
+    border-radius: 3px;
+    padding: 10px 12px;
+    margin: 2px 0 6px 0;
+    min-width: 620px;
+  }
+  .suddivisione-avvio-inline { display: inline-flex; flex-direction: column; gap: 6px; }
   .allegato-inline-wrap { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .allegato-link-input {
     width: 90px;
@@ -290,6 +327,7 @@
     font-family: inherit;
   }
   .btn-carica-file-mini { cursor: pointer; font-size: 0.85rem; flex-shrink: 0; }
+  .btn-rimuovi-allegato { cursor: pointer; font-size: 0.85rem; flex-shrink: 0; border: none; background: none; color: var(--rosso-allarme); padding: 0; }
   .btn-carica-file {
     padding: 9px 12px;
     border: 1.5px solid var(--forest-dark);
@@ -550,10 +588,12 @@
           <div class="contanti-conto">
             <span class="contanti-conto-nome">Mio</span>
             <span class="contanti-conto-saldo" id="saldo-mio">€ 0,00</span>
+            <span class="contanti-conto-speso">speso: <span id="speso-mio">€ 0,00</span></span>
           </div>
           <div class="contanti-conto">
             <span class="contanti-conto-nome">Figlia</span>
             <span class="contanti-conto-saldo" id="saldo-figlia">€ 0,00</span>
+            <span class="contanti-conto-speso">speso: <span id="speso-figlia">€ 0,00</span></span>
           </div>
         </div>
         <div class="add-row contanti-add-row">
@@ -584,6 +624,7 @@
         <input type="number" step="0.01" id="spesa-importo-input" placeholder="Importo €" class="spesa-importo-input" style="flex:0 0 100px;">
         <select id="spesa-categoria" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-categoria')"></select>
         <select id="spesa-metodo" class="categoria-select" onchange="gestisciNuovaCategoria(this, 'spese-metodo')"></select>
+        <label class="allarme-toggle"><input type="checkbox" id="spesa-suddividi-check" onchange="toggleSuddivisioneSpesa(this)"> 🔀 Suddividi</label>
         <input type="text" id="spesa-scontrino-input" placeholder="Link scontrino (opzionale)…" style="flex:1;">
         <label class="btn-carica-file" id="label-scatta-scontrino">
           📷 Scatta
@@ -595,7 +636,14 @@
         </label>
         <button id="btn-aggiungi-spesa" onclick="aggiungiSpesa()">Aggiungi</button>
       </div>
-      <div class="search-hint" id="spesa-file-hint" style="display:block; margin-top:6px;">Puoi incollare un link (es. Drive/Foto) oppure caricare direttamente una foto/PDF dello scontrino — anche entrambi insieme se vuoi.</div>
+      <div id="spesa-suddivisione-wrap" style="display:none; margin-top:8px;">
+        <div id="spesa-suddivisione-righe"></div>
+        <div class="add-row" style="margin-top:6px;">
+          <button type="button" style="flex:0 0 auto; padding:6px 12px; font-size:0.78rem;" onclick="aggiungiRigaSuddivisione('spesa-suddivisione-righe')">+ Aggiungi voce</button>
+          <span class="riepilogo-etichetta" style="margin:0;">Totale suddiviso: <span id="totale-suddiviso-label">€ 0,00</span></span>
+        </div>
+      </div>
+      <div class="search-hint" id="spesa-file-hint" style="display:block; margin-top:6px;">Puoi incollare un link, caricare foto/PDF, oppure con "Scegli file" su molti telefoni compare anche "Scansiona documenti" (esce già come PDF pulito).</div>
 
       <h3 class="sottotitolo" style="margin-top:22px;">Riepilogo per categoria — questo mese</h3>
       <div class="riepilogo-categorie" id="riepilogo-mese"></div>
@@ -1414,8 +1462,8 @@ aggiornaEtichettaMese();
 window.filtraCategoriaSpese = function(cat) { filtroAttivoSpese = cat; renderFiltriSpese(ultimiDocsSpese); applicaFiltroSpese(); };
 function applicaFiltroSpese() {
   document.querySelectorAll('#spese-lista .spesa').forEach(el => {
-    const cat = el.getAttribute('data-categoria');
-    el.style.display = (!filtroAttivoSpese || cat === filtroAttivoSpese) ? '' : 'none';
+    const cat = el.getAttribute('data-categoria') || '';
+    el.style.display = (!filtroAttivoSpese || cat.split('|').includes(filtroAttivoSpese)) ? '' : 'none';
   });
   document.querySelectorAll('#contanti-movimenti-lista .contanti-movimento').forEach(el => {
     const cat = el.getAttribute('data-categoria');
@@ -1425,7 +1473,10 @@ function applicaFiltroSpese() {
 function renderFiltriSpese(docsDelMese) {
   const wrap = document.getElementById('filtri-spese');
   const cats = new Set(LISTE_CATEGORIE['spese-categoria']);
-  docsDelMese.forEach(d => { if (d.categoria) cats.add(d.categoria); });
+  docsDelMese.forEach(d => {
+    if (d.categoria) cats.add(d.categoria);
+    if (d.suddivisione) d.suddivisione.forEach(v => cats.add(v.categoria));
+  });
   wrap.innerHTML = '';
   const t = document.createElement('button');
   t.className = 'filtro-chip' + (!filtroAttivoSpese ? ' attivo' : '');
@@ -1465,13 +1516,14 @@ window.anteprimaFileScontrino = function(input) {
   }
 };
 
-window.apriFormAllegatoSpesa = function(id, btnEl) {
+window.apriFormAllegatoSpesa = function(id, btnEl, modificaEsistente) {
   const wrap = document.createElement('span');
   wrap.className = 'allegato-inline-wrap';
   wrap.innerHTML = `
     <input type="text" class="allegato-link-input" placeholder="Incolla link…">
     <label class="btn-carica-file-mini" title="Scatta foto">📷<input type="file" accept="image/*" capture="environment" style="display:none;"></label>
     <label class="btn-carica-file-mini" title="Scegli file (foto o PDF)">🖼️<input type="file" accept="image/*,application/pdf,.pdf" style="display:none;"></label>
+    ${modificaEsistente ? '<button type="button" class="btn-rimuovi-allegato" title="Rimuovi allegato">🗑</button>' : ''}
   `;
   const linkInput = wrap.querySelector('.allegato-link-input');
   linkInput.onblur = async () => {
@@ -1482,10 +1534,17 @@ window.apriFormAllegatoSpesa = function(id, btnEl) {
   };
   linkInput.onkeydown = (e) => { if (e.key === 'Enter') linkInput.blur(); };
 
+  if (modificaEsistente) {
+    wrap.querySelector('.btn-rimuovi-allegato').onclick = async () => {
+      if (!confirm('Rimuovere l\'allegato di questa spesa?')) return;
+      await updateDoc(doc(db, 'spese', id), { scontrinoUrl: null, scontrinoFoto: null });
+    };
+  }
+
   const gestisciFile = async (input) => {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
-    if (file.type === 'application/pdf') {
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
       try {
         const link = await caricaSuDrive(file);
         await updateDoc(doc(db, 'spese', id), { scontrinoUrl: link });
@@ -1541,13 +1600,135 @@ function comprimiImmagine(file, maxLarghezza, qualita) {
   });
 }
 
+function creaSelectCategoriaSuddivisione(valoreIniziale) {
+  const select = document.createElement('select');
+  select.className = 'categoria-select suddivisione-categoria';
+  LISTE_CATEGORIE['spese-categoria'].forEach(cat => {
+    const opz = document.createElement('option');
+    opz.value = cat; opz.textContent = cat;
+    if (cat === valoreIniziale) opz.selected = true;
+    select.appendChild(opz);
+  });
+  const nuovaOpz = document.createElement('option');
+  nuovaOpz.value = '__nuova__'; nuovaOpz.textContent = '+ Nuova…';
+  select.appendChild(nuovaOpz);
+  select.onchange = () => gestisciNuovaCategoria(select, 'spese-categoria');
+  return select;
+}
+
+window.aggiungiRigaSuddivisione = function(containerId, categoriaIniziale, importoIniziale, onCambia) {
+  const cont = document.getElementById(containerId);
+  const riga = document.createElement('div');
+  riga.className = 'suddivisione-riga';
+  const select = creaSelectCategoriaSuddivisione(categoriaIniziale);
+  const inputImporto = document.createElement('input');
+  inputImporto.type = 'number'; inputImporto.step = '0.01'; inputImporto.placeholder = 'Importo €'; inputImporto.className = 'suddivisione-importo';
+  if (importoIniziale !== undefined && importoIniziale !== null) inputImporto.value = importoIniziale;
+  const btnRimuovi = document.createElement('button');
+  btnRimuovi.type = 'button'; btnRimuovi.className = 'elimina'; btnRimuovi.title = 'Rimuovi voce'; btnRimuovi.textContent = '🗑';
+  btnRimuovi.onclick = () => { riga.remove(); if (onCambia) onCambia(); else ricalcolaTotaleSuddivisione(containerId); };
+  if (onCambia) { select.onchange = () => { gestisciNuovaCategoria(select, 'spese-categoria'); onCambia(); }; inputImporto.oninput = onCambia; }
+  else { inputImporto.oninput = () => ricalcolaTotaleSuddivisione(containerId); }
+  riga.appendChild(select); riga.appendChild(inputImporto); riga.appendChild(btnRimuovi);
+  cont.appendChild(riga);
+  if (!onCambia) ricalcolaTotaleSuddivisione(containerId);
+};
+
+function ricalcolaTotaleSuddivisione(containerId) {
+  const cont = document.getElementById(containerId);
+  let totale = 0;
+  cont.querySelectorAll('.suddivisione-importo').forEach(inp => { const v = parseFloat(inp.value); if (!isNaN(v)) totale += v; });
+  const label = document.getElementById('totale-suddiviso-label');
+  if (label) label.textContent = formattaEuro(totale);
+  return totale;
+}
+
+function leggiVociSuddivisione(containerId) {
+  const voci = [];
+  document.querySelectorAll('#' + containerId + ' .suddivisione-riga').forEach(r => {
+    const cat = r.querySelector('.suddivisione-categoria').value;
+    const imp = parseFloat(r.querySelector('.suddivisione-importo').value);
+    if (!isNaN(imp) && imp > 0) voci.push({ categoria: cat, importo: imp });
+  });
+  return voci;
+}
+
+async function salvaSuddivisioneSpesa(id, containerId, importoOriginale) {
+  const voci = leggiVociSuddivisione(containerId);
+  if (voci.length === 0) {
+    await updateDoc(doc(db, 'spese', id), { suddivisione: null, categoria: 'Altro', importo: importoOriginale });
+  } else {
+    const totale = voci.reduce((acc, v) => acc + v.importo, 0);
+    await updateDoc(doc(db, 'spese', id), { suddivisione: voci, importo: totale, categoria: null });
+  }
+}
+
+function renderDettaglioSuddivisione(container, s) {
+  container.innerHTML = '';
+  const containerId = 'dettaglio-righe-' + s.id;
+  const righeWrap = document.createElement('div');
+  righeWrap.id = containerId;
+  container.appendChild(righeWrap);
+  s.suddivisione.forEach(v => aggiungiRigaSuddivisione(containerId, v.categoria, v.importo, () => salvaSuddivisioneSpesa(s.id, containerId, s.importo)));
+  const btnAggiungi = document.createElement('button');
+  btnAggiungi.type = 'button';
+  btnAggiungi.className = 'btn-piccolo-suddivisione';
+  btnAggiungi.textContent = '+ Aggiungi voce';
+  btnAggiungi.onclick = () => aggiungiRigaSuddivisione(containerId, 'Altro', '', () => salvaSuddivisioneSpesa(s.id, containerId, s.importo));
+  container.appendChild(btnAggiungi);
+}
+
+window.avviaSuddivisioneEsistente = function(s, badgeCatEl, btnSuddividiEl) {
+  const wrap = document.createElement('span');
+  wrap.className = 'suddivisione-avvio-inline';
+  const containerId = 'avvio-suddivisione-' + s.id;
+  wrap.innerHTML = `<div id="${containerId}"></div>`;
+  const btnConferma = document.createElement('button');
+  btnConferma.type = 'button';
+  btnConferma.className = 'anticipo-conferma';
+  btnConferma.textContent = '✓ Suddividi';
+  wrap.appendChild(btnConferma);
+  btnConferma.onclick = async () => { await salvaSuddivisioneSpesa(s.id, containerId, s.importo); };
+
+  badgeCatEl.style.display = 'none';
+  btnSuddividiEl.parentNode.replaceChild(wrap, btnSuddividiEl);
+  aggiungiRigaSuddivisione(containerId, s.categoria || 'Altro', s.importo, () => {});
+  aggiungiRigaSuddivisione(containerId, 'Altro', '', () => {});
+};
+
+window.toggleSuddivisioneSpesa = function(checkbox) {
+  document.getElementById('spesa-suddivisione-wrap').style.display = checkbox.checked ? 'block' : 'none';
+  document.getElementById('spesa-categoria').style.display = checkbox.checked ? 'none' : '';
+  document.getElementById('spesa-importo-input').readOnly = checkbox.checked;
+  document.getElementById('spesa-importo-input').style.opacity = checkbox.checked ? '0.5' : '1';
+  const righe = document.getElementById('spesa-suddivisione-righe');
+  if (checkbox.checked && righe.children.length === 0) {
+    aggiungiRigaSuddivisione('spesa-suddivisione-righe');
+    aggiungiRigaSuddivisione('spesa-suddivisione-righe');
+  }
+};
+
 window.aggiungiSpesa = async function() {
   const motivo = document.getElementById('spesa-motivo-input').value.trim();
   const dove = document.getElementById('spesa-dove-input').value.trim();
   const data = document.getElementById('spesa-data-input').value;
-  const importoVal = parseFloat(document.getElementById('spesa-importo-input').value);
-  if (!motivo || !data || isNaN(importoVal)) return;
-  const categoria = document.getElementById('spesa-categoria').value;
+  const suddividiAttivo = document.getElementById('spesa-suddividi-check').checked;
+  let importoVal, categoria, suddivisione = null;
+  if (suddividiAttivo) {
+    suddivisione = [];
+    document.querySelectorAll('#spesa-suddivisione-righe .suddivisione-riga').forEach(riga => {
+      const cat = riga.querySelector('.suddivisione-categoria').value;
+      const imp = parseFloat(riga.querySelector('.suddivisione-importo').value);
+      if (!isNaN(imp) && imp > 0) suddivisione.push({ categoria: cat, importo: imp });
+    });
+    if (suddivisione.length === 0) { alert('Aggiungi almeno una voce con un importo valido.'); return; }
+    importoVal = suddivisione.reduce((acc, v) => acc + v.importo, 0);
+    categoria = null;
+  } else {
+    importoVal = parseFloat(document.getElementById('spesa-importo-input').value);
+    categoria = document.getElementById('spesa-categoria').value;
+  }
+  if (!motivo || !data || isNaN(importoVal) || importoVal <= 0) return;
   const metodo = document.getElementById('spesa-metodo').value;
   let scontrinoUrl = document.getElementById('spesa-scontrino-input').value.trim();
   if (scontrinoUrl && !/^https?:\/\//i.test(scontrinoUrl)) scontrinoUrl = 'https://' + scontrinoUrl;
@@ -1557,7 +1738,7 @@ window.aggiungiSpesa = async function() {
   const fileScelto = (inputGalleria.files && inputGalleria.files[0]) ? inputGalleria.files[0] : ((inputCamera.files && inputCamera.files[0]) ? inputCamera.files[0] : null);
   let scontrinoFoto = null;
   const btnAggiungi = document.getElementById('btn-aggiungi-spesa');
-  if (fileScelto && fileScelto.type === 'application/pdf') {
+  if (fileScelto && (fileScelto.type === 'application/pdf' || fileScelto.name.toLowerCase().endsWith('.pdf'))) {
     btnAggiungi.disabled = true;
     btnAggiungi.textContent = 'Carico su Drive…';
     try {
@@ -1588,11 +1769,14 @@ window.aggiungiSpesa = async function() {
     btnAggiungi.textContent = 'Aggiungi';
   }
 
-  await addDoc(collection(db, 'spese'), { motivo, dove, data, importo: importoVal, categoria, metodo, scontrinoUrl: scontrinoUrl || null, scontrinoFoto, creato: serverTimestamp() });
+  await addDoc(collection(db, 'spese'), { motivo, dove, data, importo: importoVal, categoria, suddivisione, metodo, scontrinoUrl: scontrinoUrl || null, scontrinoFoto, creato: serverTimestamp() });
   document.getElementById('spesa-motivo-input').value = '';
   document.getElementById('spesa-dove-input').value = '';
   document.getElementById('spesa-importo-input').value = '';
   document.getElementById('spesa-scontrino-input').value = '';
+  document.getElementById('spesa-suddividi-check').checked = false;
+  document.getElementById('spesa-suddivisione-righe').innerHTML = '';
+  toggleSuddivisioneSpesa(document.getElementById('spesa-suddividi-check'));
   inputGalleria.value = '';
   inputCamera.value = '';
   anteprimaFileScontrino(inputGalleria);
@@ -1633,36 +1817,54 @@ function renderSpese(snap) {
     const el = document.createElement('div');
     el.className = 'spesa';
     el.setAttribute('data-search', (s.motivo + ' ' + (s.dove || '')).toLowerCase());
-    el.setAttribute('data-categoria', s.categoria || 'Altro');
+    el.setAttribute('data-categoria', (s.suddivisione && s.suddivisione.length > 0) ? s.suddivisione.map(v => v.categoria).join('|') : (s.categoria || 'Altro'));
     el.innerHTML = `
       <div class="spesa-data data-cliccabile" title="Clicca per cambiare la data">${formatDataCorta(s.data)}</div>
       <span class="spesa-descrizione descrizione-testo">${escapeHtml(s.motivo)}</span>
       ${s.dove ? '<span class="spesa-dove dove-testo">' + escapeHtml(s.dove) + '</span>' : '<span class="spesa-dove dove-testo" style="opacity:0.4;">+ dove</span>'}
       ${s.scontrinoUrl ? '<a href="' + escapeHtml(s.scontrinoUrl) + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri link scontrino">📎</a>' : ''}
       ${s.scontrinoFoto ? '<button type="button" class="spesa-scontrino btn-vedi-foto" title="Apri foto scontrino">🖼️</button>' : ''}
-      ${(!s.scontrinoUrl && !s.scontrinoFoto) ? '<button type="button" class="spesa-scontrino btn-aggiungi-allegato" title="Aggiungi scontrino">➕</button>' : ''}
+      ${(!s.scontrinoUrl && !s.scontrinoFoto) ? '<button type="button" class="spesa-scontrino btn-aggiungi-allegato" title="Aggiungi scontrino">➕</button>' : '<button type="button" class="spesa-scontrino btn-modifica-allegato" title="Cambia o rimuovi l\'allegato">✎</button>'}
       <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
-      <span class="badge-categoria badge-cat-cliccabile" title="Categoria">${escapeHtml(s.categoria || 'Altro')}</span>
+      ${(s.suddivisione && s.suddivisione.length > 0)
+        ? '<button type="button" class="badge-categoria btn-suddivisione-toggle" title="Vedi/modifica la suddivisione">🔀 ' + s.suddivisione.length + ' categorie</button>'
+        : '<span class="badge-categoria badge-cat-cliccabile" title="Categoria">' + escapeHtml(s.categoria || 'Altro') + '</span><button type="button" class="btn-suddividi-esistente" title="Suddividi questa spesa in più categorie">🔀</button>'}
       <span class="badge-metodo badge-metodo-cliccabile" title="Metodo di pagamento">${escapeHtml(s.metodo || 'Altro')}</span>
       <button class="elimina" onclick="eliminaSpesa('${s.id}')" title="Elimina">🗑</button>
     `;
     abilitaModifica(el.querySelector('.descrizione-testo'), 'spese', s.id, 'motivo');
     abilitaModifica(el.querySelector('.dove-testo'), 'spese', s.id, 'dove');
     el.querySelector('.data-cliccabile').onclick = function() { cambiaDataSpesa(s.id, s.data, this); };
-    el.querySelector('.badge-cat-cliccabile').onclick = function() { cambiaCategoriaVoce(s.id, s.categoria || 'Altro', 'spese-categoria', 'spese', 'categoria', this); };
+    const badgeCatEl = el.querySelector('.badge-cat-cliccabile');
+    if (badgeCatEl) badgeCatEl.onclick = function() { cambiaCategoriaVoce(s.id, s.categoria || 'Altro', 'spese-categoria', 'spese', 'categoria', this); };
     el.querySelector('.badge-metodo-cliccabile').onclick = function() { cambiaCategoriaVoce(s.id, s.metodo || 'Altro', 'spese-metodo', 'spese', 'metodo', this); };
     const btnFoto = el.querySelector('.btn-vedi-foto');
     if (btnFoto) btnFoto.onclick = () => apriModalFoto(s.scontrinoFoto);
     const btnAggiungiAllegato = el.querySelector('.btn-aggiungi-allegato');
     if (btnAggiungiAllegato) btnAggiungiAllegato.onclick = function() { apriFormAllegatoSpesa(s.id, this); };
+    const btnModificaAllegato = el.querySelector('.btn-modifica-allegato');
+    if (btnModificaAllegato) btnModificaAllegato.onclick = function() { apriFormAllegatoSpesa(s.id, this, true); };
+    const btnSuddividiEsistente = el.querySelector('.btn-suddividi-esistente');
+    if (btnSuddividiEsistente) btnSuddividiEsistente.onclick = function() { avviaSuddivisioneEsistente(s, badgeCatEl, this); };
+    const btnToggleSuddivisione = el.querySelector('.btn-suddivisione-toggle');
     const importoEl = el.querySelector('.importo-testo');
-    importoEl.setAttribute('contenteditable', 'true');
-    importoEl.addEventListener('blur', async () => {
-      const nuovo = parseFloat(importoEl.textContent.replace('€', '').replace(',', '.').trim());
-      if (!isNaN(nuovo)) { await updateDoc(doc(db, 'spese', s.id), { importo: nuovo }); }
-      else { importoEl.textContent = formattaEuro(s.importo); }
-    });
+    if (!btnToggleSuddivisione) {
+      importoEl.setAttribute('contenteditable', 'true');
+      importoEl.addEventListener('blur', async () => {
+        const nuovo = parseFloat(importoEl.textContent.replace('€', '').replace(',', '.').trim());
+        if (!isNaN(nuovo)) { await updateDoc(doc(db, 'spese', s.id), { importo: nuovo }); }
+        else { importoEl.textContent = formattaEuro(s.importo); }
+      });
+    }
     cont.appendChild(el);
+    if (btnToggleSuddivisione) {
+      const dettaglio = document.createElement('div');
+      dettaglio.className = 'suddivisione-dettaglio';
+      dettaglio.style.display = 'none';
+      renderDettaglioSuddivisione(dettaglio, s);
+      cont.appendChild(dettaglio);
+      btnToggleSuddivisione.onclick = () => { dettaglio.style.display = dettaglio.style.display === 'none' ? 'block' : 'none'; };
+    }
   });
   applicaFiltroSpese();
 
@@ -1670,11 +1872,24 @@ function renderSpese(snap) {
   document.getElementById('totale-mese-label').textContent = formattaEuro(totaleMese);
 
   const delAnno = tutti.filter(s => new Date(s.data + 'T00:00:00').getFullYear() === annoVisualizzato);
-  renderRiepilogoCategorie('riepilogo-mese', delMese, 'categoria');
-  renderRiepilogoCategorie('riepilogo-anno', delAnno, 'categoria');
+  renderRiepilogoCategorie('riepilogo-mese', flattenPerCategoria(delMese), 'categoria');
+  renderRiepilogoCategorie('riepilogo-anno', flattenPerCategoria(delAnno), 'categoria');
   renderRiepilogoCategorie('riepilogo-metodo-mese', delMese, 'metodo');
   renderRiepilogoCategorie('riepilogo-metodo-anno', delAnno, 'metodo');
   document.getElementById('riepilogo-metodo-anno-titolo').textContent = 'Riepilogo per metodo di pagamento — anno ' + annoVisualizzato;
+}
+
+// Per il riepilogo categorie, "spacchetta" le spese suddivise nelle loro singole voci
+function flattenPerCategoria(elenco) {
+  const risultato = [];
+  elenco.forEach(s => {
+    if (s.suddivisione && s.suddivisione.length > 0) {
+      s.suddivisione.forEach(v => risultato.push({ categoria: v.categoria, importo: v.importo }));
+    } else {
+      risultato.push({ categoria: s.categoria, importo: s.importo });
+    }
+  });
+  return risultato;
 }
 
 // ============================================================
@@ -1702,11 +1917,19 @@ function renderContanti(snap) {
   snap.forEach(d => movimenti.push({ id: d.id, ...d.data() }));
 
   const saldi = { mio: 0, figlia: 0 };
-  movimenti.forEach(m => { saldi[m.conto] = (saldi[m.conto] || 0) + m.segno * m.importo; });
+  const spesi = { mio: 0, figlia: 0 };
+  movimenti.forEach(m => {
+    saldi[m.conto] = (saldi[m.conto] || 0) + m.segno * m.importo;
+    if (m.segno < 0) spesi[m.conto] = (spesi[m.conto] || 0) + m.importo;
+  });
   document.getElementById('saldo-mio').textContent = formattaEuro(saldi.mio || 0);
   document.getElementById('saldo-figlia').textContent = formattaEuro(saldi.figlia || 0);
+  document.getElementById('speso-mio').textContent = formattaEuro(spesi.mio || 0);
+  document.getElementById('speso-figlia').textContent = formattaEuro(spesi.figlia || 0);
 
   movimenti.sort((a, b) => {
+    const cmpData = (b.data || '').localeCompare(a.data || '');
+    if (cmpData !== 0) return cmpData;
     const ta = a.creato && a.creato.toMillis ? a.creato.toMillis() : 0;
     const tb = b.creato && b.creato.toMillis ? b.creato.toMillis() : 0;
     return tb - ta;
