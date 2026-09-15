@@ -276,23 +276,28 @@
   .spesa:last-child { border-bottom: none; }
   .spesa-data { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.74rem; color: var(--forest-dark); width: 40px; flex-shrink: 0; cursor: pointer; }
   .spesa-descrizione { flex: 1; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .spesa-descrizione:focus, .spesa-dove:focus { overflow: visible; white-space: normal; }
+  .spesa-descrizione:focus { overflow: visible; white-space: normal; }
   .spesa-dove {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    width: 100px !important;
-    min-width: 100px !important;
-    max-width: 100px !important;
-    flex: 0 0 100px !important;
-    text-align: left !important;
-    direction: ltr !important;
+    width: 100px;
+    flex: 0 0 100px;
+    text-align: left;
     font-size: 0.76rem;
     color: var(--ink-soft);
     font-style: italic;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    cursor: pointer;
+  }
+  .dove-input-inline {
+    width: 100px;
+    padding: 3px 5px;
+    font-size: 0.74rem;
+    border: 1.5px solid var(--forest-dark);
+    border-radius: 2px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: inherit;
   }
   .spesa-importo { font-weight: 700; font-size: 0.88rem; color: var(--ink); flex-shrink: 0; width: 72px; text-align: right; border-bottom: 1px dashed var(--border); cursor: text; }
   .spesa-scontrino { flex-shrink: 0; text-decoration: none; font-size: 0.9rem; border: none; background: none; cursor: pointer; padding: 0; }
@@ -1937,6 +1942,22 @@ window.cambiaDataSpesa = function(id, dataAttuale, dataEl) {
   input.focus();
 };
 
+window.cambiaDoveSpesa = function(id, doveAttuale, spanEl) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = doveAttuale || '';
+  input.placeholder = 'Dove…';
+  input.className = 'dove-input-inline';
+  const salva = async () => {
+    const nuovo = input.value.trim();
+    await updateDoc(doc(db, 'spese', id), { dove: nuovo });
+  };
+  input.onblur = salva;
+  input.onkeydown = (e) => { if (e.key === 'Enter') input.blur(); };
+  spanEl.parentNode.replaceChild(input, spanEl);
+  input.focus();
+};
+
 function formattaEuro(v) { return '€ ' + v.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
 let ultimoSnapSpese = null;
@@ -1964,7 +1985,7 @@ function renderSpese(snap) {
     el.innerHTML = `
       <div class="spesa-data data-cliccabile" title="Clicca per cambiare la data">${formatDataCorta(s.data)}</div>
       <span class="spesa-descrizione descrizione-testo">${escapeHtml(s.motivo)}</span>
-      ${s.dove ? '<span class="spesa-dove dove-testo" dir="ltr">' + escapeHtml(s.dove) + '</span>' : '<span class="spesa-dove dove-testo" dir="ltr" style="opacity:0.4;">+ dove</span>'}
+      ${s.dove ? '<span class="spesa-dove dove-testo" title="Clicca per modificare">' + escapeHtml(s.dove) + '</span>' : '<span class="spesa-dove dove-testo" title="Clicca per aggiungere" style="opacity:0.4;">+ dove</span>'}
       ${s.scontrinoUrl ? '<a href="' + escapeHtml(s.scontrinoUrl) + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri link scontrino">📎</a>' : ''}
       ${s.scontrinoFoto ? '<button type="button" class="spesa-scontrino btn-vedi-foto" title="Apri foto scontrino">🖼️</button>' : ''}
       ${(!s.scontrinoUrl && !s.scontrinoFoto) ? '<button type="button" class="spesa-scontrino btn-aggiungi-allegato" title="Aggiungi scontrino">➕</button>' : '<button type="button" class="spesa-scontrino btn-modifica-allegato" title="Cambia o rimuovi l\'allegato">✎</button>'}
@@ -1976,7 +1997,7 @@ function renderSpese(snap) {
       <button class="elimina" onclick="eliminaSpesa('${s.id}')" title="Elimina">🗑</button>
     `;
     abilitaModifica(el.querySelector('.descrizione-testo'), 'spese', s.id, 'motivo');
-    abilitaModifica(el.querySelector('.dove-testo'), 'spese', s.id, 'dove');
+    el.querySelector('.dove-testo').onclick = function() { cambiaDoveSpesa(s.id, s.dove, this); };
     el.querySelector('.data-cliccabile').onclick = function() { cambiaDataSpesa(s.id, s.data, this); };
     const badgeCatEl = el.querySelector('.badge-cat-cliccabile');
     if (badgeCatEl) badgeCatEl.onclick = function(e) {
