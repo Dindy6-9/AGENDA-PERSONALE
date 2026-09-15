@@ -394,11 +394,77 @@
     cursor: pointer;
   }
 
+  .btn-flottante-calc {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--forest);
+    color: #fff;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    z-index: 9998;
+  }
+  .btn-flottante-calc:hover { background: var(--forest-dark); }
+  .calcolatrice-popup {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background: var(--surface);
+    border: 1.5px solid var(--forest-dark);
+    border-radius: 6px;
+    padding: 10px;
+    width: 210px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.3);
+    z-index: 9999;
+  }
+  .calc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--forest-dark);
+    margin-bottom: 6px;
+  }
+  .calc-chiudi { cursor: pointer; font-size: 1rem; color: var(--ink-soft); }
+  #calc-display {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    text-align: right;
+    font-size: 1.1rem;
+    font-family: 'Fraunces', serif;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .calc-tasti { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .calc-tasti button {
+    padding: 10px 0;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--paper);
+    color: var(--ink);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .calc-tasti button:hover { background: var(--forest); color: #fff; }
+  .calc-tasti .calc-uguale { background: var(--forest); color: #fff; }
+  .calc-tasti .calc-cancella { grid-column: span 4; background: var(--brick); color: #fff; }
+
   @media print {
     body { background: #fff; padding: 0; display: block; }
     #login, #chi-sei { display: none !important; }
     #app { max-width: 100%; border: none; }
-    header.appbar, .search-row, nav.tabs, footer.note, .add-row { display: none !important; }
+    header.appbar, .search-row, nav.tabs, footer.note, .add-row, .btn-flottante-calc, .calcolatrice-popup { display: none !important; }
     section.panel { padding: 0; }
     [contenteditable="true"]:hover, [contenteditable="true"]:focus { background: none !important; outline: none !important; }
     /* Nella stampa di Spese, nascondi tutto il contorno: resta solo l'elenco (già filtrato se hai scelto una categoria/metodo) */
@@ -669,6 +735,22 @@
   <div id="modal-foto" class="modal-foto-overlay" style="display:none;" onclick="chiudiModalFoto()">
     <span class="modal-foto-chiudi">✕</span>
     <img id="modal-foto-img" src="" alt="Foto scontrino">
+  </div>
+
+  <button id="btn-calcolatrice" class="btn-flottante-calc" title="Calcolatrice" onclick="apriCalcolatrice()">🧮</button>
+  <div id="calcolatrice-popup" class="calcolatrice-popup" style="display:none;">
+    <div class="calc-header">
+      <span>Calcolatrice</span>
+      <span class="calc-chiudi" onclick="apriCalcolatrice()">✕</span>
+    </div>
+    <input type="text" id="calc-display" readonly>
+    <div class="calc-tasti">
+      <button type="button" onclick="calcInput('7')">7</button><button type="button" onclick="calcInput('8')">8</button><button type="button" onclick="calcInput('9')">9</button><button type="button" onclick="calcOperatore('/')">÷</button>
+      <button type="button" onclick="calcInput('4')">4</button><button type="button" onclick="calcInput('5')">5</button><button type="button" onclick="calcInput('6')">6</button><button type="button" onclick="calcOperatore('*')">×</button>
+      <button type="button" onclick="calcInput('1')">1</button><button type="button" onclick="calcInput('2')">2</button><button type="button" onclick="calcInput('3')">3</button><button type="button" onclick="calcOperatore('-')">−</button>
+      <button type="button" onclick="calcInput('0')">0</button><button type="button" onclick="calcInput('.')">.</button><button type="button" class="calc-uguale" onclick="calcUguale()">=</button><button type="button" onclick="calcOperatore('+')">+</button>
+      <button type="button" class="calc-cancella" onclick="calcCancella()">C</button>
+    </div>
   </div>
 
 <script type="module">
@@ -1570,6 +1652,36 @@ window.apriFormAllegatoSpesa = function(id, btnEl, modificaEsistente) {
   linkInput.focus();
 };
 
+let calcEspressione = '';
+window.apriCalcolatrice = function() {
+  const popup = document.getElementById('calcolatrice-popup');
+  popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
+};
+window.calcInput = function(v) {
+  calcEspressione += v;
+  document.getElementById('calc-display').value = calcEspressione;
+};
+window.calcOperatore = function(op) {
+  if (calcEspressione === '') return;
+  calcEspressione += op;
+  document.getElementById('calc-display').value = calcEspressione;
+};
+window.calcUguale = function() {
+  try {
+    if (!/^[0-9+\-*/.() ]+$/.test(calcEspressione)) throw new Error('non valido');
+    const risultato = Function('"use strict"; return (' + calcEspressione + ')')();
+    calcEspressione = String(risultato);
+    document.getElementById('calc-display').value = calcEspressione;
+  } catch (e) {
+    document.getElementById('calc-display').value = 'Errore';
+    calcEspressione = '';
+  }
+};
+window.calcCancella = function() {
+  calcEspressione = '';
+  document.getElementById('calc-display').value = '';
+};
+
 window.apriModalFoto = function(dataUrl) {
   document.getElementById('modal-foto-img').src = dataUrl;
   document.getElementById('modal-foto').style.display = 'flex';
@@ -1627,7 +1739,7 @@ window.aggiungiRigaSuddivisione = function(containerId, categoriaIniziale, impor
   const btnRimuovi = document.createElement('button');
   btnRimuovi.type = 'button'; btnRimuovi.className = 'elimina'; btnRimuovi.title = 'Rimuovi voce'; btnRimuovi.textContent = '🗑';
   btnRimuovi.onclick = () => { riga.remove(); if (onCambia) onCambia(); else ricalcolaTotaleSuddivisione(containerId); };
-  if (onCambia) { select.onchange = () => { gestisciNuovaCategoria(select, 'spese-categoria'); onCambia(); }; inputImporto.oninput = onCambia; }
+  if (onCambia) { select.onchange = () => { gestisciNuovaCategoria(select, 'spese-categoria'); onCambia(); }; inputImporto.onblur = onCambia; inputImporto.onkeydown = (e) => { if (e.key === 'Enter') inputImporto.blur(); }; }
   else { inputImporto.oninput = () => ricalcolaTotaleSuddivisione(containerId); }
   riga.appendChild(select); riga.appendChild(inputImporto); riga.appendChild(btnRimuovi);
   cont.appendChild(riga);
@@ -1831,7 +1943,7 @@ function renderSpese(snap) {
       ${(!s.scontrinoUrl && !s.scontrinoFoto) ? '<button type="button" class="spesa-scontrino btn-aggiungi-allegato" title="Aggiungi scontrino">➕</button>' : '<button type="button" class="spesa-scontrino btn-modifica-allegato" title="Cambia o rimuovi l\'allegato">✎</button>'}
       <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
       ${(s.suddivisione && s.suddivisione.length > 0)
-        ? '<button type="button" class="badge-categoria btn-suddivisione-toggle" title="Vedi/modifica la suddivisione">🔀 ' + s.suddivisione.length + ' categorie</button>'
+        ? '<button type="button" class="badge-categoria btn-suddivisione-toggle" title="Vedi/modifica la suddivisione">🔀 ' + s.suddivisione.length + '</button>'
         : '<span class="badge-categoria badge-cat-cliccabile" title="Categoria">' + escapeHtml(s.categoria || 'Altro') + '</span><button type="button" class="btn-suddividi-esistente" title="Suddividi questa spesa in più categorie">🔀</button>'}
       <span class="badge-metodo badge-metodo-cliccabile" title="Metodo di pagamento">${escapeHtml(s.metodo || 'Altro')}</span>
       <button class="elimina" onclick="eliminaSpesa('${s.id}')" title="Elimina">🗑</button>
