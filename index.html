@@ -307,6 +307,9 @@
     cursor: pointer;
     border: 1px solid var(--forest);
   }
+  .badge-con-suddividi { display: inline-flex; align-items: center; gap: 4px; }
+  .mini-suddividi { opacity: 0.45; font-size: 0.7rem; cursor: pointer; }
+  .mini-suddividi:hover { opacity: 1; }
   .suddivisione-dettaglio {
     background: var(--surface);
     border-radius: 3px;
@@ -891,6 +894,14 @@ async function inizializzaListaCategorie(tipo) {
     }
   });
 }
+// Mostra sempre la scrittura "ufficiale" della categoria/metodo (es. sempre "POS", mai "Pos"), anche se su una voce vecchia è salvata diversa
+function etichettaCanonica(valore, tipo) {
+  if (!valore) return 'Altro';
+  const lista = LISTE_CATEGORIE[tipo] || [];
+  const trovata = lista.find(c => c.toLowerCase() === valore.toLowerCase());
+  return trovata || valore;
+}
+
 function aggiornaSelectCategoria(selectId, lista) {
   const select = document.getElementById(selectId);
   if (!select) return;
@@ -1944,15 +1955,20 @@ function renderSpese(snap) {
       <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
       ${(s.suddivisione && s.suddivisione.length > 0)
         ? '<button type="button" class="badge-categoria btn-suddivisione-toggle" title="Vedi/modifica la suddivisione">🔀 ' + s.suddivisione.length + '</button>'
-        : '<span class="badge-categoria badge-cat-cliccabile" title="Categoria">' + escapeHtml(s.categoria || 'Altro') + '</span><button type="button" class="btn-suddividi-esistente" title="Suddividi questa spesa in più categorie">🔀</button>'}
-      <span class="badge-metodo badge-metodo-cliccabile" title="Metodo di pagamento">${escapeHtml(s.metodo || 'Altro')}</span>
+        : '<span class="badge-categoria badge-cat-cliccabile badge-con-suddividi" title="Clicca per cambiare categoria, o sulla 🔀 per suddividere">' + escapeHtml(etichettaCanonica(s.categoria, 'spese-categoria')) + '<span class="mini-suddividi" title="Suddividi questa spesa in più categorie">🔀</span></span>'}
+      <span class="badge-metodo badge-metodo-cliccabile" title="Metodo di pagamento">${escapeHtml(etichettaCanonica(s.metodo, 'spese-metodo'))}</span>
       <button class="elimina" onclick="eliminaSpesa('${s.id}')" title="Elimina">🗑</button>
     `;
     abilitaModifica(el.querySelector('.descrizione-testo'), 'spese', s.id, 'motivo');
     abilitaModifica(el.querySelector('.dove-testo'), 'spese', s.id, 'dove');
     el.querySelector('.data-cliccabile').onclick = function() { cambiaDataSpesa(s.id, s.data, this); };
     const badgeCatEl = el.querySelector('.badge-cat-cliccabile');
-    if (badgeCatEl) badgeCatEl.onclick = function() { cambiaCategoriaVoce(s.id, s.categoria || 'Altro', 'spese-categoria', 'spese', 'categoria', this); };
+    if (badgeCatEl) badgeCatEl.onclick = function(e) {
+      if (e.target.classList.contains('mini-suddividi')) return; // gestito a parte
+      cambiaCategoriaVoce(s.id, s.categoria || 'Altro', 'spese-categoria', 'spese', 'categoria', this);
+    };
+    const miniSuddividi = el.querySelector('.mini-suddividi');
+    if (miniSuddividi) miniSuddividi.onclick = function(e) { e.stopPropagation(); avviaSuddivisioneEsistente(s, badgeCatEl, badgeCatEl); };
     el.querySelector('.badge-metodo-cliccabile').onclick = function() { cambiaCategoriaVoce(s.id, s.metodo || 'Altro', 'spese-metodo', 'spese', 'metodo', this); };
     const btnFoto = el.querySelector('.btn-vedi-foto');
     if (btnFoto) btnFoto.onclick = () => apriModalFoto(s.scontrinoFoto);
