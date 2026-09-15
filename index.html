@@ -1991,16 +1991,16 @@ function renderSpese(snap) {
       <div class="spesa-data data-cliccabile" title="Clicca per cambiare la data">${formatDataCorta(s.data)}</div>
       <span class="spesa-descrizione descrizione-testo">${escapeHtml(s.motivo)}</span>
       ${s.dove ? '<span class="spesa-dove dove-testo" title="Clicca per modificare">' + escapeHtml(s.dove) + '</span>' : '<span class="spesa-dove dove-testo" title="Clicca per aggiungere" style="opacity:0.4;">+ dove</span>'}
-      <span class="spesa-allegati-wrap">
-      ${s.scontrinoUrl ? '<a href="' + escapeHtml(s.scontrinoUrl) + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri link scontrino">📎</a>' : ''}
-      ${s.scontrinoFoto ? '<button type="button" class="spesa-scontrino btn-vedi-foto" title="Apri foto scontrino">🖼️</button>' : ''}
-      ${(!s.scontrinoUrl && !s.scontrinoFoto) ? '<button type="button" class="spesa-scontrino btn-aggiungi-allegato" title="Aggiungi scontrino">➕</button>' : '<button type="button" class="spesa-scontrino btn-modifica-allegato" title="Cambia o rimuovi l\'allegato">✎</button>'}
-      </span>
       <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
       ${(s.suddivisione && s.suddivisione.length > 0)
         ? '<button type="button" class="badge-categoria btn-suddivisione-toggle" title="Vedi/modifica la suddivisione">🔀 ' + s.suddivisione.length + '</button>'
         : '<span class="badge-categoria badge-cat-cliccabile badge-con-suddividi" title="Clicca per cambiare categoria, o sulla 🔀 per suddividere">' + escapeHtml(etichettaCanonica(s.categoria, 'spese-categoria')) + '<span class="mini-suddividi" title="Suddividi questa spesa in più categorie">🔀</span></span>'}
       <span class="badge-metodo badge-metodo-cliccabile" title="Metodo di pagamento">${escapeHtml(etichettaCanonica(s.metodo, 'spese-metodo'))}</span>
+      <span class="spesa-allegati-wrap">
+      ${s.scontrinoUrl ? '<a href="' + escapeHtml(s.scontrinoUrl) + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri link scontrino">📎</a>' : ''}
+      ${s.scontrinoFoto ? '<button type="button" class="spesa-scontrino btn-vedi-foto" title="Apri foto scontrino">🖼️</button>' : ''}
+      ${(!s.scontrinoUrl && !s.scontrinoFoto) ? '<button type="button" class="spesa-scontrino btn-aggiungi-allegato" title="Aggiungi scontrino">➕</button>' : '<button type="button" class="spesa-scontrino btn-modifica-allegato" title="Cambia o rimuovi l\'allegato">✎</button>'}
+      </span>
       <button class="elimina" onclick="eliminaSpesa('${s.id}')" title="Elimina">🗑</button>
     `;
     abilitaModifica(el.querySelector('.descrizione-testo'), 'spese', s.id, 'motivo');
