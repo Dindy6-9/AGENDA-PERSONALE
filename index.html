@@ -275,7 +275,8 @@
   .spesa { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; min-width: 620px; }
   .spesa:last-child { border-bottom: none; }
   .spesa-data { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.74rem; color: var(--forest-dark); width: 40px; flex-shrink: 0; cursor: pointer; }
-  .spesa-descrizione { flex: 0 0 200px; width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spesa-descrizione { flex: 0 0 260px; width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spesa-allegati-wrap { display: flex; align-items: center; gap: 4px; width: 46px; flex: 0 0 46px; }
   .spesa-descrizione:focus { overflow: visible; white-space: normal; }
   .spesa-dove {
     display: flex;
@@ -1990,9 +1991,11 @@ function renderSpese(snap) {
       <div class="spesa-data data-cliccabile" title="Clicca per cambiare la data">${formatDataCorta(s.data)}</div>
       <span class="spesa-descrizione descrizione-testo">${escapeHtml(s.motivo)}</span>
       ${s.dove ? '<span class="spesa-dove dove-testo" title="Clicca per modificare">' + escapeHtml(s.dove) + '</span>' : '<span class="spesa-dove dove-testo" title="Clicca per aggiungere" style="opacity:0.4;">+ dove</span>'}
+      <span class="spesa-allegati-wrap">
       ${s.scontrinoUrl ? '<a href="' + escapeHtml(s.scontrinoUrl) + '" target="_blank" rel="noopener" class="spesa-scontrino" title="Apri link scontrino">📎</a>' : ''}
       ${s.scontrinoFoto ? '<button type="button" class="spesa-scontrino btn-vedi-foto" title="Apri foto scontrino">🖼️</button>' : ''}
       ${(!s.scontrinoUrl && !s.scontrinoFoto) ? '<button type="button" class="spesa-scontrino btn-aggiungi-allegato" title="Aggiungi scontrino">➕</button>' : '<button type="button" class="spesa-scontrino btn-modifica-allegato" title="Cambia o rimuovi l\'allegato">✎</button>'}
+      </span>
       <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
       ${(s.suddivisione && s.suddivisione.length > 0)
         ? '<button type="button" class="badge-categoria btn-suddivisione-toggle" title="Vedi/modifica la suddivisione">🔀 ' + s.suddivisione.length + '</button>'
