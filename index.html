@@ -275,9 +275,12 @@
   .spesa { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; min-width: 620px; }
   .spesa:last-child { border-bottom: none; }
   .spesa-data { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.74rem; color: var(--forest-dark); width: 40px; flex-shrink: 0; cursor: pointer; }
-  .spesa-descrizione { flex: 1; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spesa-descrizione { flex: 0 0 200px; width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .spesa-descrizione:focus { overflow: visible; white-space: normal; }
   .spesa-dove {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
     width: 100px;
     flex: 0 0 100px;
     text-align: left;
@@ -1950,7 +1953,8 @@ window.cambiaDoveSpesa = function(id, doveAttuale, spanEl) {
   input.className = 'dove-input-inline';
   const salva = async () => {
     const nuovo = input.value.trim();
-    await updateDoc(doc(db, 'spese', id), { dove: nuovo });
+    if (nuovo !== (doveAttuale || '')) await updateDoc(doc(db, 'spese', id), { dove: nuovo });
+    if (input.parentNode) input.parentNode.replaceChild(spanEl, input);
   };
   input.onblur = salva;
   input.onkeydown = (e) => { if (e.key === 'Enter') input.blur(); };
