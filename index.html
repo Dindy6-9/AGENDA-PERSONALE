@@ -275,8 +275,8 @@
   .spesa { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; min-width: 620px; }
   .spesa:last-child { border-bottom: none; }
   .spesa-data { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.74rem; color: var(--forest-dark); width: 40px; flex-shrink: 0; cursor: pointer; }
-  .spesa-descrizione { flex: 0 0 316px; width: 316px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .spesa-allegati-wrap { display: flex; align-items: center; justify-content: center; gap: 4px; width: 40px; flex: 0 0 40px; }
+  .spesa-descrizione { flex: 0 0 324px; width: 324px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spesa-allegati-wrap { display: flex; align-items: center; justify-content: center; gap: 2px; width: 32px; flex: 0 0 32px; }
   .spesa-descrizione:focus { overflow: visible; white-space: normal; }
   .spesa-dove {
     display: flex;
@@ -356,6 +356,7 @@
   }
   .btn-carica-file-mini { cursor: pointer; font-size: 0.85rem; flex-shrink: 0; }
   .btn-rimuovi-allegato { cursor: pointer; font-size: 0.85rem; flex-shrink: 0; border: none; background: none; color: var(--rosso-allarme); padding: 0; }
+  .btn-chiudi-allegato { cursor: pointer; font-size: 0.8rem; flex-shrink: 0; border: none; background: none; color: var(--ink-soft); padding: 0; }
   .btn-carica-file {
     padding: 9px 12px;
     border: 1.5px solid var(--forest-dark);
@@ -1641,8 +1642,10 @@ window.apriFormAllegatoSpesa = function(id, btnEl, modificaEsistente) {
     <input type="text" class="allegato-link-input" placeholder="Incolla link…">
     <label class="btn-carica-file-mini" title="Scatta foto">📷<input type="file" accept="image/*" capture="environment" style="display:none;"></label>
     <label class="btn-carica-file-mini" title="Scegli file (foto o PDF)">🖼️<input type="file" accept="image/*,application/pdf,.pdf" style="display:none;"></label>
+    <button type="button" class="btn-chiudi-allegato" title="Chiudi">✕</button>
     ${modificaEsistente ? '<button type="button" class="btn-rimuovi-allegato" title="Rimuovi allegato">🗑</button>' : ''}
   `;
+  wrap.querySelector('.btn-chiudi-allegato').onclick = () => { if (wrap.parentNode) wrap.parentNode.replaceChild(btnEl, wrap); };
   const linkInput = wrap.querySelector('.allegato-link-input');
   linkInput.onblur = async () => {
     let v = linkInput.value.trim();
