@@ -234,6 +234,8 @@
   .mese-freccia:hover { background: var(--forest); color: #fff; }
   .mese-corrente { font-family: 'Fraunces', serif; font-weight: 700; font-size: 1rem; color: var(--ink); min-width: 150px; text-align: center; }
   .riepilogo-totale { background: var(--surface); border: 1.5px solid var(--forest-dark); border-radius: 3px; padding: 10px 14px; text-align: center; margin-bottom: 16px; }
+  .riepilogo-totale-filtro { border-color: var(--brick); background: #FCEEDD; }
+  .riepilogo-totale-filtro .riepilogo-importo { color: var(--brick); }
   .contanti-wrap { background: var(--surface); border-radius: 4px; padding: 12px 14px; margin-bottom: 16px; }
   .contanti-conti { display: flex; gap: 10px; margin-bottom: 10px; }
   .contanti-conto {
@@ -684,6 +686,10 @@
       <div class="riepilogo-totale">
         <span class="riepilogo-etichetta">Totale mese</span>
         <span class="riepilogo-importo" id="totale-mese-label">€ 0,00</span>
+      </div>
+      <div class="riepilogo-totale riepilogo-totale-filtro" id="riepilogo-totale-filtro" style="display:none;">
+        <span class="riepilogo-etichetta" id="totale-filtro-etichetta">Totale categoria</span>
+        <span class="riepilogo-importo" id="totale-filtro-label">€ 0,00</span>
       </div>
 
       <div class="contanti-wrap">
@@ -2089,6 +2095,18 @@ function renderSpese(snap) {
 
   const totaleMese = delMese.reduce((acc, s) => acc + (s.importo || 0), 0);
   document.getElementById('totale-mese-label').textContent = formattaEuro(totaleMese);
+
+  const boxFiltro = document.getElementById('riepilogo-totale-filtro');
+  if (filtroAttivoSpese) {
+    const totaleFiltro = flattenPerCategoria(delMese)
+      .filter(v => v.categoria === filtroAttivoSpese)
+      .reduce((acc, v) => acc + v.importo, 0);
+    document.getElementById('totale-filtro-etichetta').textContent = 'Totale ' + filtroAttivoSpese + ' (mese)';
+    document.getElementById('totale-filtro-label').textContent = formattaEuro(totaleFiltro);
+    boxFiltro.style.display = 'block';
+  } else {
+    boxFiltro.style.display = 'none';
+  }
 
   const delAnno = tutti.filter(s => new Date(s.data + 'T00:00:00').getFullYear() === annoVisualizzato);
   renderRiepilogoCategorie('riepilogo-mese', flattenPerCategoria(delMese), 'categoria');
