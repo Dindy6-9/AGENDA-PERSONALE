@@ -316,6 +316,17 @@
     font-size: 0.82rem;
     color: var(--ink);
   }
+  .suddivisione-riga .suddivisione-nota {
+    flex: 1;
+    min-width: 100px;
+    padding: 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--paper);
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: var(--ink);
+  }
   .btn-piccolo-suddivisione, .btn-suddividi-esistente {
     padding: 3px 8px;
     border: 1.5px solid var(--forest-dark);
@@ -1767,7 +1778,7 @@ function creaSelectCategoriaSuddivisione(valoreIniziale) {
   return select;
 }
 
-window.aggiungiRigaSuddivisione = function(containerId, categoriaIniziale, importoIniziale, onCambia) {
+window.aggiungiRigaSuddivisione = function(containerId, categoriaIniziale, importoIniziale, onCambia, notaIniziale) {
   const cont = document.getElementById(containerId);
   const riga = document.createElement('div');
   riga.className = 'suddivisione-riga';
@@ -1775,12 +1786,19 @@ window.aggiungiRigaSuddivisione = function(containerId, categoriaIniziale, impor
   const inputImporto = document.createElement('input');
   inputImporto.type = 'number'; inputImporto.step = '0.01'; inputImporto.placeholder = 'Importo €'; inputImporto.className = 'suddivisione-importo';
   if (importoIniziale !== undefined && importoIniziale !== null) inputImporto.value = importoIniziale;
+  const inputNota = document.createElement('input');
+  inputNota.type = 'text'; inputNota.placeholder = 'Cosa hai comprato…'; inputNota.className = 'suddivisione-nota';
+  if (notaIniziale) inputNota.value = notaIniziale;
   const btnRimuovi = document.createElement('button');
   btnRimuovi.type = 'button'; btnRimuovi.className = 'elimina'; btnRimuovi.title = 'Rimuovi voce'; btnRimuovi.textContent = '🗑';
   btnRimuovi.onclick = () => { riga.remove(); if (onCambia) onCambia(); else ricalcolaTotaleSuddivisione(containerId); };
-  if (onCambia) { select.onchange = () => { gestisciNuovaCategoria(select, 'spese-categoria'); onCambia(); }; inputImporto.onblur = onCambia; inputImporto.onkeydown = (e) => { if (e.key === 'Enter') inputImporto.blur(); }; }
+  if (onCambia) {
+    select.onchange = () => { gestisciNuovaCategoria(select, 'spese-categoria'); onCambia(); };
+    inputImporto.onblur = onCambia; inputImporto.onkeydown = (e) => { if (e.key === 'Enter') inputImporto.blur(); };
+    inputNota.onblur = onCambia; inputNota.onkeydown = (e) => { if (e.key === 'Enter') inputNota.blur(); };
+  }
   else { inputImporto.oninput = () => ricalcolaTotaleSuddivisione(containerId); }
-  riga.appendChild(select); riga.appendChild(inputImporto); riga.appendChild(btnRimuovi);
+  riga.appendChild(select); riga.appendChild(inputImporto); riga.appendChild(inputNota); riga.appendChild(btnRimuovi);
   cont.appendChild(riga);
   if (!onCambia) ricalcolaTotaleSuddivisione(containerId);
 };
@@ -1799,7 +1817,8 @@ function leggiVociSuddivisione(containerId) {
   document.querySelectorAll('#' + containerId + ' .suddivisione-riga').forEach(r => {
     const cat = r.querySelector('.suddivisione-categoria').value;
     const imp = parseFloat(r.querySelector('.suddivisione-importo').value);
-    if (!isNaN(imp) && imp > 0) voci.push({ categoria: cat, importo: imp });
+    const nota = r.querySelector('.suddivisione-nota').value.trim();
+    if (!isNaN(imp) && imp > 0) voci.push({ categoria: cat, importo: imp, nota });
   });
   return voci;
 }
@@ -1820,7 +1839,7 @@ function renderDettaglioSuddivisione(container, s) {
   const righeWrap = document.createElement('div');
   righeWrap.id = containerId;
   container.appendChild(righeWrap);
-  s.suddivisione.forEach(v => aggiungiRigaSuddivisione(containerId, v.categoria, v.importo, () => salvaSuddivisioneSpesa(s.id, containerId, s.importo)));
+  s.suddivisione.forEach(v => aggiungiRigaSuddivisione(containerId, v.categoria, v.importo, () => salvaSuddivisioneSpesa(s.id, containerId, s.importo), v.nota));
   const btnAggiungi = document.createElement('button');
   btnAggiungi.type = 'button';
   btnAggiungi.className = 'btn-piccolo-suddivisione';
