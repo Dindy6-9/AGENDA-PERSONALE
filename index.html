@@ -1590,7 +1590,7 @@ function aggiornaEtichettaMese() {
 }
 aggiornaEtichettaMese();
 
-window.filtraCategoriaSpese = function(cat) { filtroAttivoSpese = cat; renderFiltriSpese(ultimiDocsSpese); applicaFiltroSpese(); };
+window.filtraCategoriaSpese = function(cat) { filtroAttivoSpese = cat; renderSpese(); };
 function applicaFiltroSpese() {
   document.querySelectorAll('#spese-lista .spesa').forEach(el => {
     const cat = el.getAttribute('data-categoria') || '';
