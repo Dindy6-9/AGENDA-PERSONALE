@@ -1988,6 +1988,7 @@ window.cambiaDoveSpesa = function(id, doveAttuale, spanEl) {
 function formattaEuro(v) { return '€ ' + v.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 
 let ultimoSnapSpese = null;
+const suddivisioniAperte = new Set(); // ricorda quali spese hanno il dettaglio suddivisione aperto, anche dopo un aggiornamento dati
 function renderSpese(snap) {
   if (snap) ultimoSnapSpese = snap;
   if (!ultimoSnapSpese) return;
@@ -2058,10 +2059,15 @@ function renderSpese(snap) {
     if (btnToggleSuddivisione) {
       const dettaglio = document.createElement('div');
       dettaglio.className = 'suddivisione-dettaglio';
-      dettaglio.style.display = 'none';
+      const eraAperto = suddivisioniAperte.has(s.id);
+      dettaglio.style.display = eraAperto ? 'block' : 'none';
       cont.appendChild(dettaglio);
       renderDettaglioSuddivisione(dettaglio, s);
-      btnToggleSuddivisione.onclick = () => { dettaglio.style.display = dettaglio.style.display === 'none' ? 'block' : 'none'; };
+      btnToggleSuddivisione.onclick = () => {
+        const apri = dettaglio.style.display === 'none';
+        dettaglio.style.display = apri ? 'block' : 'none';
+        if (apri) suddivisioniAperte.add(s.id); else suddivisioniAperte.delete(s.id);
+      };
     }
   });
   applicaFiltroSpese();
