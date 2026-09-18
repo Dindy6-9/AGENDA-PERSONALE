@@ -304,6 +304,7 @@
     font-family: inherit;
   }
   .spesa-importo { font-weight: 700; font-size: 0.88rem; color: var(--ink); flex-shrink: 0; width: 72px; text-align: right; border-bottom: 1px dashed var(--border); cursor: text; }
+  .spesa-importo-nota { font-size: 0.62rem; color: var(--ink-soft); font-style: italic; flex-shrink: 0; }
   .spesa-scontrino { flex-shrink: 0; text-decoration: none; font-size: 0.9rem; border: none; background: none; cursor: pointer; padding: 0; }
   .suddivisione-riga { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
   .suddivisione-riga .suddivisione-importo {
@@ -2010,10 +2011,24 @@ function renderSpese(snap) {
     el.className = 'spesa';
     el.setAttribute('data-search', (s.motivo + ' ' + (s.dove || '')).toLowerCase());
     el.setAttribute('data-categoria', (s.suddivisione && s.suddivisione.length > 0) ? s.suddivisione.map(v => v.categoria).join('|') : (s.categoria || 'Altro'));
+
+    // Se è attivo un filtro categoria che corrisponde solo a una fetta della suddivisione (non alla spesa intera),
+    // mostra l'importo di quella sola fetta invece del totale dello scontrino
+    let importoDaMostrare = s.importo;
+    let notaImportoFiltrato = '';
+    if (filtroAttivoSpese && s.suddivisione && s.suddivisione.length > 0) {
+      const vociCorrispondenti = s.suddivisione.filter(v => v.categoria === filtroAttivoSpese);
+      if (vociCorrispondenti.length > 0) {
+        importoDaMostrare = vociCorrispondenti.reduce((acc, v) => acc + v.importo, 0);
+        notaImportoFiltrato = '<span class="spesa-importo-nota" title="Fa parte di uno scontrino da ' + formattaEuro(s.importo) + '">di ' + formattaEuro(s.importo) + '</span>';
+      }
+    }
+
     el.innerHTML = `
       <div class="spesa-data data-cliccabile" title="Clicca per cambiare la data">${formatDataCorta(s.data)}</div>
       <span class="spesa-descrizione descrizione-testo">${escapeHtml(s.motivo)}</span>
-      <span class="spesa-importo importo-testo">${formattaEuro(s.importo)}</span>
+      <span class="spesa-importo importo-testo">${formattaEuro(importoDaMostrare)}</span>
+      ${notaImportoFiltrato}
       ${(s.suddivisione && s.suddivisione.length > 0)
         ? '<button type="button" class="badge-categoria btn-suddivisione-toggle" title="Vedi/modifica la suddivisione">🔀 ' + s.suddivisione.length + '</button>'
         : '<span class="badge-categoria badge-cat-cliccabile badge-con-suddividi" title="Clicca per cambiare categoria, o sulla 🔀 per suddividere">' + escapeHtml(etichettaCanonica(s.categoria, 'spese-categoria')) + '<span class="mini-suddividi" title="Suddividi questa spesa in più categorie">🔀</span></span>'}
